@@ -9,6 +9,7 @@ import dev.rosewood.rosestacker.api.RoseStackerAPI;
 import dev.rosewood.rosestacker.event.SpawnerStackEvent;
 import dev.rosewood.rosestacker.event.SpawnerUnstackEvent;
 import dev.rosewood.rosestacker.stack.StackedSpawner;
+import dev.rosewood.rosestacker.utils.ItemUtils;
 import dev.rosewood.rosestacker.utils.StackerUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -41,7 +42,7 @@ public final class BlocksProvider_RoseStacker implements BlocksProvider {
 
     @Override
     public String getSpawnerType(ItemStack itemStack) {
-        return StackerUtils.getStackedItemEntityType(itemStack).name();
+        return ItemUtils.getStackedItemEntityType(itemStack).name();
     }
 
     public static boolean isRegistered(){

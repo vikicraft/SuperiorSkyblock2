@@ -489,7 +489,7 @@ public final class PlayersListener implements Listener {
         handlePlayerPortal(e.getPlayer(), e.getFrom(), e.getCause(), e);
     }
 
-    private void handlePlayerPortal(Player player, Location from, PlayerTeleportEvent.TeleportCause teleportCause, Cancellable cancellable) {
+    public void handlePlayerPortal(Player player, Location from, PlayerTeleportEvent.TeleportCause teleportCause, Cancellable cancellable) {
         SuperiorPlayer superiorPlayer = plugin.getPlayers().getSuperiorPlayer(player);
 
         if(superiorPlayer instanceof SuperiorNPCPlayer)

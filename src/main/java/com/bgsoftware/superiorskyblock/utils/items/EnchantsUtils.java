@@ -1,7 +1,7 @@
 package com.bgsoftware.superiorskyblock.utils.items;
 
+import com.bgsoftware.common.reflection.ReflectField;
 import com.bgsoftware.superiorskyblock.SuperiorSkyblockPlugin;
-import com.bgsoftware.superiorskyblock.utils.reflections.ReflectField;
 import org.bukkit.enchantments.Enchantment;
 
 public final class EnchantsUtils {
@@ -16,7 +16,7 @@ public final class EnchantsUtils {
     }
 
     public static void registerGlowEnchantment(){
-        glowEnchant = plugin.getNMSAdapter().getGlowEnchant();
+        glowEnchant = plugin.getNMSAlgorithms().getGlowEnchant();
         ACCEPTING_NEW.set(null, true);
         try{
             Enchantment.registerEnchantment(glowEnchant);

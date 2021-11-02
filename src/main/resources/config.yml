@@ -23,6 +23,8 @@ database:
   prefix: ''
   useSSL: false
   allowPublicKeyRetrieval: true
+  waitTimeout: 600000
+  maxLifetime: 1800000
 
 # Set the main command of the plugin.
 # You can add aliases by adding "," after the command name, and split them using ",".
@@ -112,6 +114,9 @@ stacked-blocks:
   # Custom name for the blocks.
   custom-name: '&ex{0} {1}'
 
+  # A list of worlds that blocks cannot stack in.
+  disabled-worlds: []
+
   # A list of whitelisted blocks that will get stacked when players have stack mode toggled on.
   whitelisted:
   - 'DIAMOND_BLOCK'
@@ -176,6 +181,7 @@ island-roles:
     - MINECART_OPEN
     - MINECART_PLACE
     - MONSTER_DAMAGE
+    - NAME_ENTITY
     - PAINTING
     - PICKUP_DROPS
     - PICKUP_FISH
@@ -265,14 +271,22 @@ visitors-sign:
   # The line that will be displayed when the sign is inactive.
   inactive: '&c[Welcome]'
 
-# Set the divider for the island bank money in the total island worth.
-# You can set it to 0 to disable island bank money to be calculated in island worth.
-bank-worth-rate: 1000
-
 # Settings related to the island worlds.
 worlds:
+  # The default world that will be used.
+  # Use normal, nether or the_end.
+  # If nether or the_end are used but they are disabled below, they wi
+  default-world: normal
   # Set the name of the islands world.
-  normal-world: SuperiorWorld
+  world-name: SuperiorWorld
+  # Settings related to the normal world.
+  normal:
+    # Should the normal world be enabled?
+    enabled: true
+    # Should the normal be unlocked by default to islands?
+    unlock: true
+    # Should the schematics in this world will not be counted towards worth and level values?
+    schematic-offset: true
   # Settings related to the nether world.
   nether:
     # Should the nether world be enabled?
@@ -282,6 +296,8 @@ worlds:
     # Custom name for the nether world.
     # When empty, the name will be "<island-world>_nether"
     name: ''
+    # Should the schematics in this world will not be counted towards worth and level values?
+    schematic-offset: true
   end:
     # Should the end world be enabled?
     enabled: false
@@ -290,9 +306,11 @@ worlds:
     # Custom name for the end world.
     # When empty, the name will be "<island-world>_the_end"
     name: ''
-  # Should the plugin optimize the island worlds?
-  # When enabled, only chunks of islands will be saved from the island worlds.
-  optimize: false
+    # Should the schematics in this world will not be counted towards worth and level values?
+    schematic-offset: true
+    # Should dragon fight be enabled? This will spawn dragons for each island.
+    # This feature is in beta, expect bugs!
+    dragon-fight: false
   # The difficulty of the island worlds.
   difficulty: EASY
 
@@ -372,13 +390,12 @@ leave-confirm: true
 # Providers: Auto, WildStacker, EpicSpawners, MergedSpawner, PvpingSpawners, SilkSpawners, RoseStacker
 spawners-provider: 'AUTO'
 
+# If you want a specific stacked-blocks provider to use, specify it here.
+# Providers: Auto, WildStacker, RoseStacker
+stacked-blocks-provider: 'AUTO'
+
 # Should inventories of island members get cleared after disbanding their island?
 disband-inventory-clear: true
-
-# Should island bank balance be refunded upon island disband?
-# When set to 100, all the balance will be refunded.
-# When set to 0, no balance will be refunded.
-disband-refund: 0
 
 # All settings related to island names.
 island-names:
@@ -417,10 +434,6 @@ clear-on-join: false
 
 # Should players be able to rate their own islands?
 rate-own-island: false
-
-# Should the bonus affect the island level?
-# When true, the formula will be used.
-bonus-affect-level: true
 
 # A list of default settings for new islands.
 # You can find a list of settings here: https://bg-software.com/superiorskyblock/docs/island-settings/
@@ -572,9 +585,6 @@ stop-leaving: false
 # Should the values menu be enabled?
 values-menu: true
 
-# How many chunks should be loaded in one tick by SuperiorSkyblock?
-chunks-per-tick: 10
-
 # A list of crops that will be affected by the crop growth multiplier.
 # You can find a list of materials here: https://bg-software.com/materials/
 crops-to-grow:
@@ -632,9 +642,6 @@ default-island-fly: false
 # Can be BLUE, GREEN or RED.
 default-border-color: BLUE
 
-# Should the custom generators be handled by SuperiorSkyblock?
-generators: true
-
 # Should obsidian get turned into a lava bucket when clicking it with a bucket in hand?
 obsidian-to-lava: false
 
@@ -686,25 +693,6 @@ preview-islands:
   mycel: world, 0, 100, 0
   desert: world, 0, 100, 0
 
-# Should transaction logs of the island bank be saved to database?
-# Warning: There may be a lot of transactions, and can increase database.
-bank-logs: true
-
-# All settings related to bank interest.
-# This feature is a money-generator for the islands.
-# As long as the island members are online, they will earn money.
-bank-interest:
-  # Should the feature be enabled?
-  enabled: true
-  # The interval to give the interest reward (in seconds).
-  interval: 86400
-  # The percentage out of the bank that will be given.
-  # If it's 10, then 10% out of the bank balance will be given.
-  percentage: 10
-  # The maximum time that the island owner can be offline in order to be rewarded (in seconds).
-  # Can be -1 in order to disable this restriction.
-  recent-active: 86400
-
 # Should vanished players be hidden in tab completes?
 tab-complete-hide-vanished: true
 
@@ -728,3 +716,7 @@ charge-on-warp: 0
 
 # Should island warps be public by default?
 public-warps: false
+
+# Timeout for the recalculate task, in seconds.
+# If you want to disable the timeout, set this to 0 or below.
+recalc-task-timeout: 10

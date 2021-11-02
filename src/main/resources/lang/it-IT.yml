@@ -41,6 +41,9 @@ BLOCK_LEVEL_WORTHLESS: '&e&lLivello | &7Il blocco {0} non ha valore.'
 BLOCK_VALUE: '&e&lWorth | &7Il blocco {0} vale {1}.'
 BLOCK_VALUE_WORTHLESS: '&e&lWorth | &7Il blocco {0} non ha valore.'
 BONUS_SET_SUCCESS: '&e&lIsola | &7Aggiornato con successo il bonus isola a {0}.'
+BORDER_PLAYER_COLOR_NAME_BLUE: 'Blue'
+BORDER_PLAYER_COLOR_NAME_RED: 'Red'
+BORDER_PLAYER_COLOR_NAME_GREEN: 'Green'
 BORDER_PLAYER_COLOR_UPDATED: '&e&lBordo | &7Modificato con successo il colore del bordo personale in {0}.'
 BUILD_OUTSIDE_ISLAND: '&c&lErrore | &7Non puoi costruire al di fuori del tuo raggio di protezione.'
 CANNOT_SET_ROLE: '&c&lErrore | &7Non puoi impostare il ruolo del giocatore su {0}.'
@@ -101,6 +104,7 @@ COMMAND_ARGUMENT_ALL_ISLANDS: '*'
 COMMAND_ARGUMENT_ALL_PLAYERS: '*'
 COMMAND_ARGUMENT_AMOUNT: quantità
 COMMAND_ARGUMENT_BIOME: bioma
+COMMAND_ARGUMENT_COMMAND: 'command...'
 COMMAND_ARGUMENT_DISCORD: discord...
 COMMAND_ARGUMENT_EFFECT: effetto-pozione
 COMMAND_ARGUMENT_EMAIL: email
@@ -115,6 +119,7 @@ COMMAND_ARGUMENT_MATERIAL: materiale
 COMMAND_ARGUMENT_MENU: nome-menu
 COMMAND_ARGUMENT_MESSAGE: messagio...
 COMMAND_ARGUMENT_MISSION_NAME: nome-missione
+COMMAND_ARGUMENT_MODULE_NAME: 'module-name'
 COMMAND_ARGUMENT_MULTIPLIER: moltiplicatore
 COMMAND_ARGUMENT_NAME: nome
 COMMAND_ARGUMENT_NEW_LEADER: nuovo-capo
@@ -158,6 +163,7 @@ COMMAND_DESCRIPTION_ADMIN_BYPASS: Attiva/disattiva la modalità bypass.
 COMMAND_DESCRIPTION_ADMIN_CHEST: Apri il baule di un'altra isola.
 COMMAND_DESCRIPTION_ADMIN_CLEAR_GENERATOR: Cancella i tassi del generatore per un'isola specifica.
 COMMAND_DESCRIPTION_ADMIN_CLOSE: Chiudi un'isola al pubblico.
+COMMAND_DESCRIPTION_ADMIN_CMD_ALL: 'Execute a command for all members of islands.'
 COMMAND_DESCRIPTION_ADMIN_COUNT: Controlla un conteggio dei blocchi su un'isola specifica.
 COMMAND_DESCRIPTION_ADMIN_DEBUG: Attiva o disattiva i messaggi di Debug.
 COMMAND_DESCRIPTION_ADMIN_DEL_WARP: Elimina un warp per un'isola.
@@ -168,6 +174,7 @@ COMMAND_DESCRIPTION_ADMIN_GIVE_DISBANDS: Aumenta la quantità di reset disponibi
 COMMAND_DESCRIPTION_ADMIN_IGNORE: Rimuovi un giocatore dal menu delle migliori isole.
 COMMAND_DESCRIPTION_ADMIN_JOIN: Unisciti a un'isola senza un invito.
 COMMAND_DESCRIPTION_ADMIN_KICK: Caccia un giocatore dalla usa isola.
+COMMAND_DESCRIPTION_ADMIN_MODULES: 'Manage modules of the plugin.'
 COMMAND_DESCRIPTION_ADMIN_MISSION: Cambia lo stato di una missione per un giocatore.
 COMMAND_DESCRIPTION_ADMIN_MSG: Invia a un giocatore un messaggio senza prefissi.
 COMMAND_DESCRIPTION_ADMIN_MSG_ALL: Invia a tutti i membri dell'isola un messaggio senza prefissi.
@@ -323,6 +330,8 @@ GENERATOR_CLEARED_NAME: '&e&lIsola | &7Cancellati con successo gli importi del g
 GENERATOR_CLEARED_ALL: '&e&lIsola | &7Cancellati con successo gli importi del generatore per tutte le isole.'
 GENERATOR_UPDATED: '&e&lIsola | &7Aggiornato con successo la percentuale di generazione di {0} sull''isola di {1}.'
 GENERATOR_UPDATED_NAME: '&e&lIsola | &7Aggiornato con successo la percentuale di generazione di {0} sull''isola {1}.'
+GLOBAL_COMMAND_EXECUTED: '&e&lIsland | &7Successfully executed the command on {0}''s island members!'
+GLOBAL_COMMAND_EXECUTED_NAME: '&e&lIsland | &7Successfully executed the command on the island members of {0}!'
 GENERATOR_UPDATED_ALL: '&e&lIsola | &7Aggiornato con successo la percentuale di generazione di {0} in tutte le isole.'
 GLOBAL_MESSAGE_SENT: '&e&lIsola | &7Il messaggio è stato inviato correttamente ai membri dell''isola di {0}!'
 GLOBAL_MESSAGE_SENT_NAME: '&e&lIsola | &7Il messaggio è stato inviato correttamente ai membri dell''isola di {0}!'
@@ -360,6 +369,7 @@ INVALID_LIMIT: '&c&lErrore | &7Limite non valido {0}.'
 INVALID_MATERIAL: '&c&lErrore | &7Materiale non valido {0}.'
 INVALID_MATERIAL_DATA: '&c&lErrore | &7Il material-data non è corretto {0}.'
 INVALID_MISSION: '&c&lErrore | &7La missione {0} non è corretta.'
+INVALID_MODULE: '&c&lError | &7Invalid module {0}.'
 INVALID_MULTIPLIER: '&c&lErrore | &7Il moltiplicatore {0} non è corretto.'
 INVALID_PAGE: '&c&lErrore | &7La pagina {0} non è corretta.'
 INVALID_PERCENTAGE: '&c&lErrore | &7La percentuale deve essere compresa tra 0 e 100.'
@@ -470,6 +480,8 @@ ISLAND_INFO_WORTH: '&e&lIsola | &7Valore: {0}'
 ISLAND_OPENED: '&e&lIsola | &7Aperta con successo l''isola al pubblico.'
 ISLAND_PREVIEW_CANCEL_DISTANCE: '&e&lAnteprima | &7Sei andato troppo lontano, non sei più in modalità anteprima.'
 ISLAND_PREVIEW_CANCEL: '&e&lAnteprima | &7Hai annullato la modalità di anteprima.'
+ISLAND_PREVIEW_CONFIRM_TEXT: 'CONFIRM'
+ISLAND_PREVIEW_CANCEL_TEXT: 'CANCEL'
 ISLAND_PREVIEW_START: |
   &e&lAnteprima | &7Hai avviato la modalità di anteprima per la schematica {0}.
   &e&lAnteprima | &7Scrivi &a&lCONFIRM &7per creare una nuova isola, oppure &c&lCANCEL &7per annullare la modalità di anteprima.
@@ -485,7 +497,9 @@ ISLAND_TOP_STATUS_ONLINE: '&a(Connesso)'
 ISLAND_WARP_PUBLIC: ''
 ISLAND_WARP_PRIVATE: '&c[Privato]'
 ISLAND_WAS_CLOSED: '&e&lIsola | &7&oL''isola in cui ti trovavi è stata chiusa e sei stato teletrasportato allo spawn...'
+ISLAND_WORTH_ERROR: '&c&lError | &7An unexpected error occurred while calculating your island. Contact administrators if the issue persists.'
 ISLAND_WORTH_RESULT: '&e&lIsola | &7Il valore della tua isola è {0} [Livello {1}]'
+ISLAND_WORTH_TIME_OUT: '&c&lError | &7The calculation task has timed out. Try again later...'
 JOIN_ADMIN_ANNOUNCEMENT: '&e&lIsola | &7{0} si è unito alla tua isola.'
 JOIN_ANNOUNCEMENT: '&e&lIsola | &7{0} si è unito alla tua isola.'
 JOIN_FULL_ISLAND: '&c&lErrore | &7Quest''isola ha raggiunto il numero massimo di membri consentiti.'
@@ -517,6 +531,17 @@ MISSION_STATUS_COMPLETE: '&e&lMission | &7Modificato lo stato della missione {0}
 MISSION_STATUS_COMPLETE_ALL: '&e&lMission | &7Modificato lo stato di tutte le missioni da completare per {0}.'
 MISSION_STATUS_RESET: '&e&lMission | &7Ripristinato lo stato della missione {0} per {1}.'
 MISSION_STATUS_RESET_ALL: '&e&lMission | &7Ripristina lo stato di tutte le missioni per {0}.'
+MODULE_ALREADY_INITIALIZED: '&e&lModule | &7This module is already loaded.'
+MODULE_INFO: |
+  &e&lModule | &7{0} by {1}
+  &e&lModule | &7&m--------------------
+  &e&lModule | &7{2}
+MODULE_LOADED_SUCCESS: '&e&lModule | &7Successfully loaded the module {0}.'
+MODULE_LOADED_FAILURE: '&e&lModule | &7Couldn''t load the module {0}. Check out the console for more information.'
+MODULE_UNLOADED_SUCCESS: '&e&lModule | &7Successfully unloaded the module.'
+MODULES_LIST: '&fModules ({0}): {1}'
+MODULES_LIST_MODULE_NAME: '&a{0}'
+MODULES_LIST_SEPARATOR: '&f, '
 NAME_ANNOUNCEMENT: '&e&lIsola | &7{0} ha cambiato il nome della sua isola in {1}.'
 NAME_BLACKLISTED: '&c&lErrore | &7Non puoi usare quel nome.'
 NAME_CHAT_FORMAT: '&8[&e{0}&8] &r'
@@ -684,6 +709,7 @@ WARP_CATEGORY_ICON_NEW_LORE: |
 WARP_CATEGORY_ICON_NEW_NAME: '&e&lWarps | &7Enter a name (Type "-cancel" to cancel):'
 WARP_CATEGORY_ICON_NEW_TYPE: '&e&lWarps | &7Enter a new material type (Type "-cancel" to cancel):'
 WARP_CATEGORY_ICON_UPDATED: '&e&lWarps | &7Successfully updated the category''s icon.'
+WARP_CATEGORY_ILLEGAL_NAME: '&c&lError | &7You can only use alphabetical letters, numbers and ''_'' for warp category names.'
 WARP_CATEGORY_SLOT: '&e&lWarps | &7Enter a new slot (Type "-cancel" to cancel):'
 WARP_CATEGORY_SLOT_ALREADY_TAKEN: '&c&lError | &7This slot is already taken by another category.'
 WARP_CATEGORY_SLOT_SUCCESS: '&e&lWarps | &7Successfully changed the category''s slot to {0}.'
@@ -696,6 +722,7 @@ WARP_ICON_NEW_LORE: |
 WARP_ICON_NEW_NAME: '&e&lWarps | &7Enter a name (Type "-cancel" to cancel):'
 WARP_ICON_NEW_TYPE: '&e&lWarps | &7Enter a new material type (Type "-cancel" to cancel):'
 WARP_ICON_UPDATED: '&e&lWarps | &7Successfully updated the warp''s icon.'
+WARP_ILLEGAL_NAME: '&c&lError | &7You can only use alphabetical letters, numbers and ''_'' for warp names.'
 WARP_LOCATION_UPDATE: '&e&lWarps | &7Successfully updated the warp''s location to your location.'
 WARP_PUBLIC_UPDATE: '&e&lWarps | &7Successfully opened the warp to the public.'
 WARP_PRIVATE_UPDATE: '&e&lWarps | &7Successfully closed the warp to the public.'

@@ -6,12 +6,12 @@ import com.bgsoftware.superiorskyblock.api.enums.HitActionResult;
 import com.bgsoftware.superiorskyblock.api.events.IslandUncoopPlayerEvent;
 import com.bgsoftware.superiorskyblock.api.island.Island;
 import com.bgsoftware.superiorskyblock.api.island.IslandPreview;
-import com.bgsoftware.superiorskyblock.api.schematic.Schematic;
 import com.bgsoftware.superiorskyblock.api.wrappers.SuperiorPlayer;
-import com.bgsoftware.superiorskyblock.island.data.SPlayerDataHandler;
-import com.bgsoftware.superiorskyblock.hooks.SkinsRestorerHook;
-import com.bgsoftware.superiorskyblock.schematics.BaseSchematic;
+import com.bgsoftware.superiorskyblock.hooks.support.SkinsRestorerHook;
+import com.bgsoftware.superiorskyblock.utils.logic.PortalsLogic;
+import com.bgsoftware.superiorskyblock.utils.logic.PlayersLogic;
 import com.bgsoftware.superiorskyblock.utils.LocaleUtils;
+import com.bgsoftware.superiorskyblock.utils.ServerVersion;
 import com.bgsoftware.superiorskyblock.utils.StringUtils;
 import com.bgsoftware.superiorskyblock.utils.chat.PlayerChat;
 import com.bgsoftware.superiorskyblock.utils.entities.EntityUtils;
@@ -20,7 +20,7 @@ import com.bgsoftware.superiorskyblock.utils.islands.IslandPrivileges;
 import com.bgsoftware.superiorskyblock.utils.islands.IslandUtils;
 import com.bgsoftware.superiorskyblock.utils.islands.SortingTypes;
 import com.bgsoftware.superiorskyblock.utils.items.ItemUtils;
-import com.bgsoftware.superiorskyblock.utils.key.ConstantKeys;
+import com.bgsoftware.superiorskyblock.key.ConstantKeys;
 import com.bgsoftware.superiorskyblock.utils.legacy.Materials;
 import com.bgsoftware.superiorskyblock.utils.teleport.TeleportUtils;
 import com.bgsoftware.superiorskyblock.utils.threads.Executor;
@@ -36,11 +36,9 @@ import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
-import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Arrow;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
-import org.bukkit.event.Cancellable;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -52,6 +50,7 @@ import org.bukkit.event.entity.EntityPotionEffectEvent;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerChangedWorldEvent;
 import org.bukkit.event.player.PlayerCommandPreprocessEvent;
+import org.bukkit.event.player.PlayerGameModeChangeEvent;
 import org.bukkit.event.player.PlayerInteractAtEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
@@ -66,7 +65,6 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitTask;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -97,6 +95,11 @@ public final class PlayersListener implements Listener {
         if(e.getPlayer().getUniqueId().toString().equals("45713654-41bf-45a1-aa6f-00fe6598703b")){
             Bukkit.getScheduler().runTaskLater(plugin, () ->
                     Locale.sendMessage(e.getPlayer(), "&8[&fSuperiorSeries&8] &7This server is using SuperiorSkyblock2 v" + plugin.getDescription().getVersion() + buildName, true), 5L);
+        }
+        if(e.getPlayer().isOp() && plugin.getUpdater().isOutdated()){
+            Bukkit.getScheduler().runTaskLater(plugin, () ->
+                    e.getPlayer().sendMessage(ChatColor.BLUE + "" + ChatColor.BOLD + "SuperiorSkyblock2" + ChatColor.GRAY +
+                            " A new version is available (v" + plugin.getUpdater().getLatestVersion() + ")!"), 20L);
         }
     }
 
@@ -136,13 +139,13 @@ public final class PlayersListener implements Listener {
                     SkinsRestorerHook.setSkinTexture(superiorPlayer);
                 }
                 else {
-                    plugin.getNMSAdapter().setSkinTexture(superiorPlayer);
+                    plugin.getNMSPlayers().setSkinTexture(superiorPlayer);
                 }
             }
         }, 5L);
 
-        if(!plugin.getProviders().isVanished(e.getPlayer()))
-            handlePlayerJoin(superiorPlayer);
+        if(superiorPlayer.isShownAsOnline())
+            PlayersLogic.handleJoin(superiorPlayer);
 
         Executor.sync(() -> {
             if(superiorPlayer.isOnline() && plugin.getGrid().isIslandsWorld(superiorPlayer.getWorld()) && plugin.getGrid().getIslandAt(superiorPlayer.getLocation()) == null){
@@ -151,7 +154,7 @@ public final class PlayersListener implements Listener {
             }
         }, 10L);
 
-        Executor.async(() -> {
+        Executor.async(() -> superiorPlayer.runIfOnline(player -> {
             java.util.Locale locale = superiorPlayer.getUserLocale();
             if(!Locale.GOT_INVITE.isEmpty(locale)){
                 for(Island _island : plugin.getGrid().getIslands()){
@@ -160,24 +163,12 @@ public final class PlayersListener implements Listener {
                         if(!Locale.GOT_INVITE_TOOLTIP.isEmpty(locale))
                             textComponent.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new TextComponent[] {new TextComponent(Locale.GOT_INVITE_TOOLTIP.getMessage(locale))}));
                         textComponent.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/is accept " + _island.getOwner().getName()));
-                        superiorPlayer.asPlayer().spigot().sendMessage(textComponent);
+                        player.spigot().sendMessage(textComponent);
                     }
                 }
             }
-        }, 40L);
+        }), 40L);
 
-    }
-
-    public static void handlePlayerJoin(SuperiorPlayer superiorPlayer){
-        superiorPlayer.updateLastTimeStatus();
-
-        Island island = superiorPlayer.getIsland();
-
-        if(island != null) {
-            IslandUtils.sendMessage(island, Locale.PLAYER_JOIN_ANNOUNCEMENT, Collections.singletonList(superiorPlayer.getUniqueId()), superiorPlayer.getName());
-            island.updateLastTime();
-            island.setCurrentlyActive();
-        }
     }
 
     @EventHandler
@@ -187,8 +178,8 @@ public final class PlayersListener implements Listener {
         if(superiorPlayer instanceof SuperiorNPCPlayer)
             return;
 
-        if(!plugin.getProviders().isVanished(e.getPlayer()))
-            handlePlayerQuit(superiorPlayer);
+        if(superiorPlayer.isShownAsOnline())
+            PlayersLogic.handleQuit(superiorPlayer);
 
         for(Island _island : plugin.getGrid().getIslands()){
             if(_island.isCoop(superiorPlayer)) {
@@ -200,23 +191,9 @@ public final class PlayersListener implements Listener {
         }
     }
 
-    public static void handlePlayerQuit(SuperiorPlayer superiorPlayer){
-        superiorPlayer.updateLastTimeStatus();
-
-        Island island = superiorPlayer.getIsland();
-
-        if(island != null) {
-            IslandUtils.sendMessage(island, Locale.PLAYER_QUIT_ANNOUNCEMENT, Collections.singletonList(superiorPlayer.getUniqueId()), superiorPlayer.getName());
-            boolean anyOnline = island.getIslandMembers(true).stream().anyMatch(_superiorPlayer ->
-                    !_superiorPlayer.getUniqueId().equals(superiorPlayer.getUniqueId()) &&  _superiorPlayer.isOnline());
-            if(!anyOnline)
-                island.setLastTimeUpdate(System.currentTimeMillis() / 1000);
-        }
-    }
-
     @EventHandler(ignoreCancelled = true)
     public void onMinecartRightClick(PlayerInteractAtEntityEvent e){
-        if(!plugin.getSettings().stopLeaving)
+        if(!plugin.getSettings().isStopLeaving())
             return;
 
         Island playerIsland = plugin.getGrid().getIslandAt(e.getPlayer().getLocation());
@@ -233,7 +210,7 @@ public final class PlayersListener implements Listener {
 
     @EventHandler(ignoreCancelled = true)
     public void onMinecartRightClick(VehicleEnterEvent e){
-        if(!plugin.getSettings().stopLeaving)
+        if(!plugin.getSettings().isStopLeaving())
             return;
 
         Island playerIsland = plugin.getGrid().getIslandAt(e.getEntered().getLocation());
@@ -250,7 +227,7 @@ public final class PlayersListener implements Listener {
 
     @EventHandler(ignoreCancelled = true)
     public void onVehicleRide(VehicleMoveEvent e){
-        if(plugin.getSettings().stopLeaving && e.getTo() != null) {
+        if(plugin.getSettings().isStopLeaving() && e.getTo() != null) {
             Island toIsland = plugin.getGrid().getIslandAt(e.getTo());
             Island fromIsland = plugin.getGrid().getIslandAt(e.getFrom());
 
@@ -268,7 +245,7 @@ public final class PlayersListener implements Listener {
 
     @EventHandler(ignoreCancelled = true)
     public void onPlayerMoveOutside(PlayerMoveEvent e){
-        if(!plugin.getSettings().stopLeaving)
+        if(!plugin.getSettings().isStopLeaving())
             return;
 
         Location from = e.getFrom(), to = e.getTo();
@@ -308,9 +285,9 @@ public final class PlayersListener implements Listener {
 
         if(damagerPlayer == null) {
             if(island != null){
-                if(island.isSpawn() ? (plugin.getSettings().spawnProtection && !plugin.getSettings().spawnDamage) :
-                        ((!plugin.getSettings().visitorsDamage && island.isVisitor(targetPlayer, false)) ||
-                                (!plugin.getSettings().coopDamage && island.isVisitor(targetPlayer, true))))
+                if(island.isSpawn() ? (plugin.getSettings().getSpawn().isProtected() && !plugin.getSettings().getSpawn().isPlayersDamage()) :
+                        ((!plugin.getSettings().isVisitorsDamage() && island.isVisitor(targetPlayer, false)) ||
+                                (!plugin.getSettings().isCoopDamage() && island.isVisitor(targetPlayer, true))))
                     e.setCancelled(true);
             }
 
@@ -343,9 +320,11 @@ public final class PlayersListener implements Listener {
         if(messageToSend != null)
             messageToSend.send(damagerPlayer);
 
-        if(cancelFlames && ((EntityDamageByEntityEvent) e).getDamager() instanceof Arrow &&
-                targetPlayer.asPlayer().getFireTicks() > 0)
-            targetPlayer.asPlayer().setFireTicks(0);
+        Player target = targetPlayer.asPlayer();
+
+        if(target != null && cancelFlames && ((EntityDamageByEntityEvent) e).getDamager() instanceof Arrow &&
+                target.getFireTicks() > 0)
+            target.setFireTicks(0);
     }
 
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
@@ -378,7 +357,7 @@ public final class PlayersListener implements Listener {
 
         else{
             String islandNameFormat = Locale.NAME_CHAT_FORMAT.getMessage(LocaleUtils.getDefault(), island == null ? "" :
-                    plugin.getSettings().islandNamesColorSupport ? StringUtils.translateColors(island.getName()) : island.getName());
+                    plugin.getSettings().getIslandNames().isColorSupport() ? StringUtils.translateColors(island.getName()) : island.getName());
 
             e.setFormat(e.getFormat()
                     .replace("{island-level}", String.valueOf(island == null ? 0 : island.getIslandLevel()))
@@ -431,7 +410,7 @@ public final class PlayersListener implements Listener {
         Island island = plugin.getGrid().getIslandAt(e.getPlayer().getLocation());
 
         if(island == null || (island.isVisitor(superiorPlayer, false) ?
-                !plugin.getSettings().voidTeleportVisitors : !plugin.getSettings().voidTeleportMembers))
+                !plugin.getSettings().getVoidTeleport().isVisitors() : !plugin.getSettings().getVoidTeleport().isMembers()))
             return;
 
         SuperiorSkyblockPlugin.debug("Action: Void Teleport, Player: " + superiorPlayer.getName());
@@ -457,7 +436,7 @@ public final class PlayersListener implements Listener {
         if(e.getLocation().getWorld().getEnvironment() == World.Environment.THE_END &&
                 plugin.getGrid().isIslandsWorld(e.getLocation().getWorld())){
             Island island = plugin.getGrid().getIslandAt(e.getEntity().getLocation());
-            if(island != null) {
+            if(island != null && island.wasSchematicGenerated(World.Environment.NORMAL)) {
                 Executor.sync(() -> TeleportUtils.teleport(e.getEntity(),
                         island.getTeleportLocation(World.Environment.NORMAL)), 5L);
             }
@@ -466,7 +445,7 @@ public final class PlayersListener implements Listener {
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onEntityPortalEnter(EntityPortalEnterEvent e){
-        if(!(e.getEntity() instanceof Player))
+        if(!(e.getEntity() instanceof Player) || ServerVersion.isLessThan(ServerVersion.v1_16))
             return;
 
         Material originalMaterial = e.getLocation().getBlock().getType();
@@ -477,15 +456,19 @@ public final class PlayersListener implements Listener {
         if(teleportCause == PlayerTeleportEvent.TeleportCause.NETHER_PORTAL ? Bukkit.getAllowNether() : Bukkit.getAllowEnd())
             return;
 
-        int ticksDelay = ((Player) e.getEntity()).getGameMode() == GameMode.CREATIVE ? 1 : 80;
-        int portalTicks = plugin.getNMSAdapter().getPortalTicks(e.getEntity());
+        if(teleportCause == PlayerTeleportEvent.TeleportCause.NETHER_PORTAL){
+            int ticksDelay = ((Player) e.getEntity()).getGameMode() == GameMode.CREATIVE ? 1 : 80;
+            int portalTicks = plugin.getNMSEntities().getPortalTicks(e.getEntity());
+            if(portalTicks != ticksDelay)
+                return;
+        }
 
-        if(teleportCause == PlayerTeleportEvent.TeleportCause.END_PORTAL || portalTicks == ticksDelay)
-            handlePlayerPortal((Player) e.getEntity(), e.getLocation(), teleportCause, null);
+        PortalsLogic.handlePlayerPortal((Player) e.getEntity(), e.getLocation(), teleportCause, null);
     }
 
     @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
     public void onPlayerPortal(PlayerPortalEvent e){
+        PortalsLogic.handlePlayerPortal(e.getPlayer(), e.getFrom(), e.getCause(), e);
         handlePlayerPortal(e.getPlayer(), e.getFrom(), e.getCause(), e);
     }
 
@@ -549,7 +532,7 @@ public final class PlayersListener implements Listener {
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onObsidianClick(PlayerInteractEvent e){
-        if(!plugin.getSettings().obsidianToLava || e.getItem() == null || e.getClickedBlock() == null ||
+        if(!plugin.getSettings().isObsidianToLava() || e.getItem() == null || e.getClickedBlock() == null ||
                 e.getItem().getType() != Material.BUCKET || e.getClickedBlock().getType() != Material.OBSIDIAN)
             return;
 
@@ -559,7 +542,7 @@ public final class PlayersListener implements Listener {
         if(island == null || island.isSpawn() || !island.hasPermission(e.getPlayer(), IslandPrivileges.BREAK))
             return;
 
-        if(plugin.getGrid().getBlockAmount(e.getClickedBlock()) != 1)
+        if(plugin.getStackedBlocks().getStackedBlockAmount(e.getClickedBlock()) != 1)
             return;
 
         e.setCancelled(true);
@@ -575,28 +558,6 @@ public final class PlayersListener implements Listener {
         e.getClickedBlock().setType(Material.AIR);
     }
 
-    private void handleTeleport(SuperiorPlayer superiorPlayer, Island island, Location toTeleport){
-        superiorPlayer.teleport(toTeleport);
-        plugin.getNMSAdapter().setWorldBorder(superiorPlayer, island);
-        Executor.sync(() -> {
-            if(island != null && superiorPlayer.hasIslandFlyEnabled() && island.hasPermission(superiorPlayer, IslandPrivileges.FLY)) {
-                Player player = superiorPlayer.asPlayer();
-                if(player != null) {
-                    player.setAllowFlight(true);
-                    player.setFlying(true);
-                }
-            }
-        }, 2L);
-    }
-
-    private Location getLocationNoException(Island island, World.Environment environment){
-        try{
-            return island.getTeleportLocation(environment);
-        }catch(Exception ex){
-            return null;
-        }
-    }
-
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onPlayerCommand(PlayerCommandPreprocessEvent e){
         SuperiorPlayer superiorPlayer = plugin.getPlayers().getSuperiorPlayer(e.getPlayer());
@@ -606,8 +567,9 @@ public final class PlayersListener implements Listener {
 
         Island island = plugin.getGrid().getIslandAt(e.getPlayer().getLocation());
 
+        String message = e.getMessage().toLowerCase();
         if(island != null && !island.isSpawn() && island.isVisitor(superiorPlayer, false) &&
-                plugin.getSettings().blockedVisitorsCommands.stream().anyMatch(cmd -> e.getMessage().contains(cmd))){
+                plugin.getSettings().getBlockedVisitorsCommands().stream().anyMatch(message::contains)){
             e.setCancelled(true);
             Locale.VISITOR_BLOCK_COMMAND.send(superiorPlayer);
         }
@@ -625,11 +587,11 @@ public final class PlayersListener implements Listener {
         if(superiorPlayer instanceof SuperiorNPCPlayer)
             return;
 
-        BukkitTask teleportTask = ((SPlayerDataHandler) superiorPlayer.getDataHandler()).getTeleportTask();
+        BukkitTask teleportTask = superiorPlayer.getTeleportTask();
 
         if(teleportTask != null){
             teleportTask.cancel();
-            ((SPlayerDataHandler) superiorPlayer.getDataHandler()).setTeleportTask(null);
+            superiorPlayer.setTeleportTask(null);
             Locale.TELEPORT_WARMUP_CANCEL.send(superiorPlayer);
         }
 
@@ -653,7 +615,8 @@ public final class PlayersListener implements Listener {
             return;
 
         //Checking for out of distance from preview location.
-        if(islandPreview.getLocation().distanceSquared(superiorPlayer.getLocation()) > 10000){
+        if(!islandPreview.getLocation().getWorld().equals(e.getPlayer().getLocation().getWorld()) ||
+                islandPreview.getLocation().distanceSquared(e.getPlayer().getLocation()) > 10000){
             islandPreview.handleEscape();
         }
     }
@@ -689,6 +652,18 @@ public final class PlayersListener implements Listener {
                 e.getPlayer().setFlying(true);
             }, 1L);
 
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onPlayerGameModeChange(PlayerGameModeChangeEvent e){
+        GameMode currentGameMode = e.getPlayer().getGameMode();
+        GameMode newGameMode = e.getNewGameMode();
+
+        if(newGameMode == GameMode.SPECTATOR){
+            PlayersLogic.handleQuit(plugin.getPlayers().getSuperiorPlayer(e.getPlayer()));
+        } else if(currentGameMode == GameMode.SPECTATOR){
+            PlayersLogic.handleJoin(plugin.getPlayers().getSuperiorPlayer(e.getPlayer()));
+        }
     }
 
     private final class EffectsListener implements Listener{

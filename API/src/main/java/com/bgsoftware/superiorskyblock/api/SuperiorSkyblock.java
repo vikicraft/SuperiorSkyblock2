@@ -1,5 +1,6 @@
 package com.bgsoftware.superiorskyblock.api;
 
+import com.bgsoftware.superiorskyblock.api.config.SettingsManager;
 import com.bgsoftware.superiorskyblock.api.handlers.BlockValuesManager;
 import com.bgsoftware.superiorskyblock.api.handlers.CommandsManager;
 import com.bgsoftware.superiorskyblock.api.handlers.FactoriesManager;
@@ -7,10 +8,16 @@ import com.bgsoftware.superiorskyblock.api.handlers.GridManager;
 import com.bgsoftware.superiorskyblock.api.handlers.KeysManager;
 import com.bgsoftware.superiorskyblock.api.handlers.MenusManager;
 import com.bgsoftware.superiorskyblock.api.handlers.MissionsManager;
+import com.bgsoftware.superiorskyblock.api.handlers.ModulesManager;
 import com.bgsoftware.superiorskyblock.api.handlers.PlayersManager;
 import com.bgsoftware.superiorskyblock.api.handlers.ProvidersManager;
+import com.bgsoftware.superiorskyblock.api.handlers.RolesManager;
 import com.bgsoftware.superiorskyblock.api.handlers.SchematicManager;
+import com.bgsoftware.superiorskyblock.api.handlers.StackedBlocksManager;
 import com.bgsoftware.superiorskyblock.api.handlers.UpgradesManager;
+import com.bgsoftware.superiorskyblock.api.scripts.IScriptEngine;
+
+import javax.annotation.Nullable;
 
 public interface SuperiorSkyblock {
 
@@ -18,6 +25,11 @@ public interface SuperiorSkyblock {
      * Get the grid of the core.
      */
     GridManager getGrid();
+
+    /**
+     * Get the stacked-blocks manager of the core.
+     */
+    StackedBlocksManager getStackedBlocks();
 
     /**
      * Get the blocks manager of the core.
@@ -33,6 +45,11 @@ public interface SuperiorSkyblock {
      * Get the players manager of the core.
      */
     PlayersManager getPlayers();
+
+    /**
+     * Get the roles manager of the core.
+     */
+    RolesManager getRoles();
 
     /**
      * Get the missions manager of the core.
@@ -65,8 +82,30 @@ public interface SuperiorSkyblock {
     CommandsManager getCommands();
 
     /**
+     * Get the settings of the plugin.
+     */
+    SettingsManager getSettings();
+
+    /**
      * Get the objects factory of the plugin.
      */
     FactoriesManager getFactory();
+
+    /**
+     * Get the modules manager of the plugin.
+     */
+    ModulesManager getModules();
+
+    /**
+     * Get the script engine of the plugin.
+     */
+    IScriptEngine getScriptEngine();
+
+    /**
+     * Set the script engine of the plugin.
+     * @param scriptEngine The script engine to set.
+     *                     When null, the default java script engine will be set instead.
+     */
+    void setScriptEngine(@Nullable IScriptEngine scriptEngine);
 
 }

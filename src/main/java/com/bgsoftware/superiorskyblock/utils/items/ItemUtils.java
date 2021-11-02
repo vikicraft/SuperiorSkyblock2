@@ -1,10 +1,10 @@
 package com.bgsoftware.superiorskyblock.utils.items;
 
+import com.bgsoftware.common.reflection.ReflectMethod;
 import com.bgsoftware.superiorskyblock.utils.ServerVersion;
-import com.bgsoftware.superiorskyblock.utils.reflections.ReflectMethod;
-import com.bgsoftware.superiorskyblock.utils.tags.CompoundTag;
-import com.bgsoftware.superiorskyblock.utils.tags.Tag;
-import com.bgsoftware.superiorskyblock.utils.tags.TagUtils;
+import com.bgsoftware.superiorskyblock.tag.CompoundTag;
+import com.bgsoftware.superiorskyblock.tag.Tag;
+import com.bgsoftware.superiorskyblock.tag.TagUtils;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.EntityType;
@@ -159,13 +159,15 @@ public final class ItemUtils {
     }
 
     public static ItemStack deserializeItem(String serialized){
-        ByteArrayInputStream inputStream = new ByteArrayInputStream(new BigInteger(serialized, 32).toByteArray());
+        if(serialized.length() > 0) {
+            ByteArrayInputStream inputStream = new ByteArrayInputStream(new BigInteger(serialized, 32).toByteArray());
 
-        try{
-            CompoundTag compoundTag = (CompoundTag) Tag.fromStream(new DataInputStream(inputStream), 0);
-            return TagUtils.compoundToItem(compoundTag);
-        }catch (Exception ex){
-            ex.printStackTrace();
+            try {
+                CompoundTag compoundTag = (CompoundTag) Tag.fromStream(new DataInputStream(inputStream), 0);
+                return TagUtils.compoundToItem(compoundTag);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
         }
 
         return null;

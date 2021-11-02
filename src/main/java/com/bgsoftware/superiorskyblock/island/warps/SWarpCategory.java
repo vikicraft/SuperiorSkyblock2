@@ -5,10 +5,13 @@ import com.bgsoftware.superiorskyblock.api.island.Island;
 import com.bgsoftware.superiorskyblock.api.island.warps.IslandWarp;
 import com.bgsoftware.superiorskyblock.api.island.warps.WarpCategory;
 import com.bgsoftware.superiorskyblock.api.wrappers.SuperiorPlayer;
+import com.bgsoftware.superiorskyblock.database.bridge.IslandsDatabaseBridge;
 import com.bgsoftware.superiorskyblock.utils.items.ItemBuilder;
+import com.google.common.base.Preconditions;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -41,10 +44,13 @@ public final class SWarpCategory implements WarpCategory {
 
     @Override
     public void setName(String name) {
-        SuperiorSkyblockPlugin.debug("Action: Update Warp-Category Name, Island: " + island.getOwner().getName() + ", Category: " + this.name + ", New Name: " + name);
+        Preconditions.checkNotNull(name, "name parameter cannot be null.");
+        SuperiorSkyblockPlugin.debug("Action: Update Warp-Category Name, Island: " + getOwnerName() + ", Category: " + this.name + ", New Name: " + name);
+        String oldName = this.name;
         this.name = name;
-        island.getDataHandler().saveWarps();
-        island.getDataHandler().saveWarpCategories();
+        for(IslandWarp islandWarp : islandWarps)
+            IslandsDatabaseBridge.updateWarpCategory(island, islandWarp, oldName);
+        IslandsDatabaseBridge.updateWarpCategoryName(island, this, oldName);
     }
 
     @Override
@@ -59,9 +65,9 @@ public final class SWarpCategory implements WarpCategory {
 
     @Override
     public void setSlot(int slot) {
-        SuperiorSkyblockPlugin.debug("Action: Update Warp-Category Slot, Island: " + island.getOwner().getName() + ", Category: " + this.name + ", New Slot: " + slot);
+        SuperiorSkyblockPlugin.debug("Action: Update Warp-Category Slot, Island: " + getOwnerName() + ", Category: " + this.name + ", New Slot: " + slot);
         this.slot = slot;
-        island.getDataHandler().saveWarpCategories();
+        IslandsDatabaseBridge.updateWarpCategorySlot(island, this);
     }
 
     @Override
@@ -70,17 +76,22 @@ public final class SWarpCategory implements WarpCategory {
     }
 
     @Override
-    public ItemStack getIcon(SuperiorPlayer superiorPlayer) {
+    public ItemStack getIcon(@Nullable SuperiorPlayer superiorPlayer) {
         ItemBuilder itemBuilder = new ItemBuilder(icon)
                 .replaceAll("{0}", name);
         return superiorPlayer == null ? itemBuilder.build() : itemBuilder.build(superiorPlayer);
     }
 
     @Override
-    public void setIcon(ItemStack icon) {
-        SuperiorSkyblockPlugin.debug("Action: Update Warp-Category Icon, Island: " + island.getOwner().getName() + ", Category: " + this.name);
+    public void setIcon(@Nullable ItemStack icon) {
+        SuperiorSkyblockPlugin.debug("Action: Update Warp-Category Icon, Island: " + getOwnerName() + ", Category: " + this.name);
         this.icon = icon == null ? DEFAULT_WARP_ICON.clone() : icon.clone();
-        island.getDataHandler().saveWarpCategories();
+        IslandsDatabaseBridge.updateWarpCategoryIcon(island, this);
+    }
+
+    private String getOwnerName(){
+        SuperiorPlayer superiorPlayer = island.getOwner();
+        return superiorPlayer == null ? "None" : superiorPlayer.getName();
     }
 
 }

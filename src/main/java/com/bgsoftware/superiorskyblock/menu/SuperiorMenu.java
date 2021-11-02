@@ -1,14 +1,13 @@
 package com.bgsoftware.superiorskyblock.menu;
 
+import com.bgsoftware.common.reflection.ReflectField;
 import com.bgsoftware.superiorskyblock.Locale;
 import com.bgsoftware.superiorskyblock.SuperiorSkyblockPlugin;
+import com.bgsoftware.superiorskyblock.api.menu.ISuperiorMenu;
 import com.bgsoftware.superiorskyblock.api.objects.Pair;
 import com.bgsoftware.superiorskyblock.api.wrappers.SuperiorPlayer;
-import com.bgsoftware.superiorskyblock.hooks.PlaceholderHook;
-import com.bgsoftware.superiorskyblock.utils.commands.CommandUtils;
+import com.bgsoftware.superiorskyblock.hooks.support.PlaceholderHook;
 import com.bgsoftware.superiorskyblock.utils.items.ItemBuilder;
-import com.bgsoftware.superiorskyblock.utils.reflections.ReflectField;
-import com.bgsoftware.superiorskyblock.utils.registry.Registry;
 import com.bgsoftware.superiorskyblock.utils.threads.Executor;
 import com.bgsoftware.superiorskyblock.wrappers.SoundWrapper;
 import org.bukkit.Bukkit;
@@ -19,10 +18,12 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
@@ -32,7 +33,11 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @SuppressWarnings({"unused", "WeakerAccess"})
-public abstract class SuperiorMenu implements InventoryHolder {
+public abstract class SuperiorMenu implements ISuperiorMenu {
+
+    protected static final String[] MENU_IGNORED_SECTIONS = new String[] {
+            "items", "sounds", "commands", "back"
+    };
 
     protected static final SuperiorSkyblockPlugin plugin = SuperiorSkyblockPlugin.getPlugin();
 
@@ -49,13 +54,13 @@ public abstract class SuperiorMenu implements InventoryHolder {
             'X', 'Y', 'Z'
     };
 
-    protected static final Registry<String, MenuData> dataMap = Registry.createRegistry();
+    protected static final Map<String, MenuData> dataMap = new HashMap<>();
 
     private final String identifier;
     protected final SuperiorPlayer superiorPlayer;
     protected SuperiorPlayer targetPlayer = null;
 
-    protected SuperiorMenu previousMenu;
+    protected ISuperiorMenu previousMenu;
     protected boolean previousMove = true, closeButton = false, nextMove = false;
     private boolean refreshing = false;
 
@@ -74,22 +79,22 @@ public abstract class SuperiorMenu implements InventoryHolder {
 
     public void addSound(int slot, SoundWrapper sound) {
         if(sound != null)
-            getData().sounds.add(slot, sound);
+            getData().sounds.put(slot, sound);
     }
 
     public void addCommands(int slot, List<String> commands) {
         if(commands != null && !commands.isEmpty())
-            getData().commands.add(slot, commands);
+            getData().commands.put(slot, commands);
     }
 
     public void addPermission(int slot, String permission, SoundWrapper noAccessSound) {
         if(permission != null && !permission.isEmpty())
-            getData().permissions.add(slot, new Pair<>(permission, noAccessSound));
+            getData().permissions.put(slot, new Pair<>(permission, noAccessSound));
     }
 
     public void addFillItem(int slot, ItemBuilder itemBuilder){
         if(itemBuilder != null)
-            getData().fillItems.add(slot, itemBuilder);
+            getData().fillItems.put(slot, itemBuilder);
     }
 
     public ItemBuilder getFillItem(int slot){
@@ -101,7 +106,7 @@ public abstract class SuperiorMenu implements InventoryHolder {
     }
 
     public void resetData(){
-        dataMap.add(identifier, new MenuData());
+        dataMap.put(identifier, new MenuData());
     }
 
     public void setTitle(String title){
@@ -125,7 +130,7 @@ public abstract class SuperiorMenu implements InventoryHolder {
     }
 
     public void addData(String key, Object value){
-        getData().data.add(key, value);
+        getData().data.put(key, value);
     }
 
     public Object getData(String key){
@@ -133,7 +138,7 @@ public abstract class SuperiorMenu implements InventoryHolder {
     }
 
     public Object getData(String key, Object def){
-        return getData().data.get(key, def);
+        return getData().data.getOrDefault(key, def);
     }
 
     public boolean containsData(String key){
@@ -149,16 +154,25 @@ public abstract class SuperiorMenu implements InventoryHolder {
         return buildInventory(null);
     }
 
+    @Override
+    public void setPreviousMove(boolean previousMove) {
+        this.previousMove = previousMove;
+    }
+
+    @Nullable
+    @Override
+    public ISuperiorMenu getPreviousMenu() {
+        return this.previousMenu;
+    }
+
     public final void onClick(InventoryClickEvent e){
         if(refreshing)
             return;
 
-        Player player = superiorPlayer.asPlayer();
-
         if(e.getCurrentItem() != null) {
             SoundWrapper sound = getSound(e.getRawSlot());
             if (sound != null)
-                sound.playSound(player);
+                sound.playSound(e.getWhoClicked());
 
             List<String> commands = getCommands(e.getRawSlot());
             if (commands != null)
@@ -167,7 +181,7 @@ public abstract class SuperiorMenu implements InventoryHolder {
             Pair<String, SoundWrapper> permission = getPermission(e.getRawSlot());
             if(permission != null && !superiorPlayer.hasPermission(permission.getKey())){
                 if(permission.getValue() != null)
-                    permission.getValue().playSound(player);
+                    permission.getValue().playSound(e.getWhoClicked());
                 
                 return;
             }
@@ -226,7 +240,7 @@ public abstract class SuperiorMenu implements InventoryHolder {
                 runCommand(args, e, e.getWhoClicked());
                 break;
             case "admin":
-                String commandLabel = plugin.getSettings().islandCommand.split(",")[0];
+                String commandLabel = plugin.getSettings().getIslandCommand().split(",")[0];
                 runCommand(commandLabel + " admin " + args, e, sender);
                 break;
             case "close":
@@ -239,25 +253,27 @@ public abstract class SuperiorMenu implements InventoryHolder {
                 e.getWhoClicked().closeInventory();
                 break;
             default:
-                CommandUtils.dispatchSubCommand(sender, subCommand, args);
+                plugin.getCommands().dispatchSubCommand(sender, subCommand, args);
                 break;
         }
     }
 
     protected abstract void onPlayerClick(InventoryClickEvent e);
 
-    protected abstract void cloneAndOpen(SuperiorMenu previousMenu);
+    public abstract void cloneAndOpen(ISuperiorMenu previousMenu);
 
-    public void open(SuperiorMenu previousMenu){
+    public void open(ISuperiorMenu previousMenu){
         if(Bukkit.isPrimaryThread()){
             Executor.async(() -> open(previousMenu));
             return;
         }
 
-        if(!superiorPlayer.isOnline())
+        Player player = superiorPlayer.asPlayer();
+
+        if(player == null)
             return;
 
-        if(superiorPlayer.asPlayer().isSleeping()){
+        if(player.isSleeping()){
             Locale.OPEN_MENU_WHILE_SLEEPING.send(superiorPlayer);
             return;
         }
@@ -284,9 +300,7 @@ public abstract class SuperiorMenu implements InventoryHolder {
         }
 
         Executor.sync(() -> {
-            Player player = superiorPlayer.asPlayer();
-
-            if(player == null)
+            if(!superiorPlayer.isOnline())
                 return;
 
             SuperiorMenu currentMenu = null;
@@ -300,7 +314,7 @@ public abstract class SuperiorMenu implements InventoryHolder {
                 return;
 
             if(previousMenu != null)
-                previousMenu.previousMove = false;
+                previousMenu.setPreviousMove(false);
 
             player.openInventory(inventory);
 
@@ -317,13 +331,13 @@ public abstract class SuperiorMenu implements InventoryHolder {
 
     public void closeInventory(SuperiorPlayer superiorPlayer){
         Executor.sync(() -> {
-            if(!nextMove && !closeButton && plugin.getSettings().onlyBackButton) {
+            if(!nextMove && !closeButton && plugin.getSettings().isOnlyBackButton()) {
                 open(previousMenu);
             }
 
             else if(previousMenu != null && (boolean) getData("previous-menu", true)) {
                 if (previousMove)
-                    previousMenu.cloneAndOpen(previousMenu.previousMenu);
+                    previousMenu.cloneAndOpen(previousMenu.getPreviousMenu());
                 else
                     previousMove = true;
             }
@@ -337,10 +351,13 @@ public abstract class SuperiorMenu implements InventoryHolder {
         MenuData menuData = getData();
         Inventory inventory;
 
-        String title = PlaceholderHook.parse(superiorPlayer, menuData.title);
+        String title = menuData.title;
         if(titleReplacer != null)
             title = titleReplacer.apply(title);
 
+        //placeholder with titleReplacer
+        title = PlaceholderHook.parse(superiorPlayer, title);
+        
         if(menuData.inventoryType != InventoryType.CHEST){
             inventory = Bukkit.createInventory(this, menuData.inventoryType, title);
         }
@@ -350,12 +367,12 @@ public abstract class SuperiorMenu implements InventoryHolder {
         }
 
         if(inventory.getHolder() == null)
-            INVENTORY.set(inventory, plugin.getNMSAdapter().getCustomHolder(menuData.inventoryType,this, title));
+            INVENTORY.set(inventory, plugin.getNMSAlgorithms().getCustomHolder(menuData.inventoryType,this, title));
 
         //noinspection all
         List<Integer> slots = containsData("slots") ? (List<Integer>) getData("slots") : new ArrayList<>();
 
-        for(Map.Entry<Integer, ItemBuilder> itemStackEntry : menuData.fillItems.entries()) {
+        for(Map.Entry<Integer, ItemBuilder> itemStackEntry : menuData.fillItems.entrySet()) {
             ItemBuilder itemBuilder = itemStackEntry.getValue().clone();
             if(itemStackEntry.getKey() >= 0)
                 inventory.setItem(itemStackEntry.getKey(), slots.contains(itemStackEntry.getKey()) ?
@@ -379,7 +396,7 @@ public abstract class SuperiorMenu implements InventoryHolder {
 
     private MenuData getData(){
         if(!dataMap.containsKey(identifier)){
-            dataMap.add(identifier, new MenuData());
+            dataMap.put(identifier, new MenuData());
         }
 
         return dataMap.get(identifier);
@@ -402,16 +419,21 @@ public abstract class SuperiorMenu implements InventoryHolder {
         return obj instanceof SuperiorMenu && ((SuperiorMenu) obj).getIdentifier().equals(getIdentifier());
     }
 
+    protected static String[] additionalMenuSections(String... ignoredSections){
+        String[] sections = Arrays.copyOf(MENU_IGNORED_SECTIONS, MENU_IGNORED_SECTIONS.length + ignoredSections.length);
+        System.arraycopy(ignoredSections, 0, sections, MENU_IGNORED_SECTIONS.length, ignoredSections.length);
+        return sections;
+    }
+
     public static void killMenu(SuperiorPlayer superiorPlayer){
-        if(!superiorPlayer.isOnline())
-            return;
+        superiorPlayer.runIfOnline(player -> {
+            Inventory inventory = player.getOpenInventory().getTopInventory();
+            InventoryHolder inventoryHolder = inventory == null ? null : inventory.getHolder();
+            if(inventoryHolder instanceof SuperiorMenu)
+                ((SuperiorMenu) inventoryHolder).previousMove = false;
 
-        Inventory inventory = superiorPlayer.asPlayer().getOpenInventory().getTopInventory();
-        InventoryHolder inventoryHolder = inventory == null ? null : inventory.getHolder();
-        if(inventoryHolder instanceof SuperiorMenu)
-            ((SuperiorMenu) inventoryHolder).previousMove = false;
-
-        superiorPlayer.asPlayer().closeInventory();
+            player.closeInventory();
+        });
     }
 
     protected static <T extends SuperiorMenu> void refreshMenus(Class<T> menuClazz, Predicate<T> predicate){
@@ -444,11 +466,11 @@ public abstract class SuperiorMenu implements InventoryHolder {
 
     protected static class MenuData{
 
-        private final Registry<Integer, SoundWrapper> sounds = Registry.createRegistry();
-        private final Registry<Integer, List<String>> commands = Registry.createRegistry();
-        private final Registry<Integer, Pair<String, SoundWrapper>> permissions = Registry.createRegistry();
-        private final Registry<Integer, ItemBuilder> fillItems = Registry.createRegistry();
-        private final Registry<String, Object> data = Registry.createRegistry();
+        private final Map<Integer, SoundWrapper> sounds = new HashMap<>();
+        private final Map<Integer, List<String>> commands = new HashMap<>();
+        private final Map<Integer, Pair<String, SoundWrapper>> permissions = new HashMap<>();
+        private final Map<Integer, ItemBuilder> fillItems = new HashMap<>();
+        private final Map<String, Object> data = new HashMap<>();
         private String title = "";
         private InventoryType inventoryType = InventoryType.CHEST;
         private int rowsSize = 6;
@@ -456,7 +478,7 @@ public abstract class SuperiorMenu implements InventoryHolder {
 
     }
 
-    protected static List<Integer> getSlots(ConfigurationSection section, String key, Registry<Character, List<Integer>> charSlots) {
+    protected static List<Integer> getSlots(ConfigurationSection section, String key, Map<Character, List<Integer>> charSlots) {
         if(!section.contains(key))
             return new ArrayList<>();
 

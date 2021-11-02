@@ -2,11 +2,11 @@ package com.bgsoftware.superiorskyblock.menu;
 
 import com.bgsoftware.common.config.CommentedConfiguration;
 import com.bgsoftware.superiorskyblock.SuperiorSkyblockPlugin;
+import com.bgsoftware.superiorskyblock.api.menu.ISuperiorMenu;
 import com.bgsoftware.superiorskyblock.api.wrappers.SuperiorPlayer;
 import com.bgsoftware.superiorskyblock.commands.ISuperiorCommand;
 import com.bgsoftware.superiorskyblock.utils.FileUtils;
 import com.bgsoftware.superiorskyblock.utils.LocaleUtils;
-import com.bgsoftware.superiorskyblock.utils.registry.Registry;
 import com.google.common.collect.Sets;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.ConfigurationSection;
@@ -40,7 +40,7 @@ public final class SuperiorMenuCustom extends SuperiorMenu {
     }
 
     @Override
-    protected void cloneAndOpen(SuperiorMenu previousMenu) {
+    public void cloneAndOpen(ISuperiorMenu previousMenu) {
         openInventory(superiorPlayer, fileName, previousMenu);
     }
 
@@ -53,6 +53,12 @@ public final class SuperiorMenuCustom extends SuperiorMenu {
 
         if(cfg.contains("command")){
             ConfigurationSection commandsSection = cfg.getConfigurationSection("command");
+
+            if(commandsSection == null){
+                SuperiorSkyblockPlugin.log("&c[" + fileName + "] Custom menu doesn't have it's command section configured correctly, skipping...");
+                return;
+            }
+
             List<String> aliases = Arrays.asList(commandsSection.getString("aliases", "").split(", "));
             String permission = commandsSection.getString("permission", "");
             Map<Locale, String> descriptions = new HashMap<>();
@@ -65,14 +71,12 @@ public final class SuperiorMenuCustom extends SuperiorMenu {
             plugin.getCommands().registerCommand(new CustomMenuCommand(fileName, aliases, permission, descriptions, displayCommand));
         }
 
-        Registry<Character, List<Integer>> charSlots = FileUtils.loadGUI(superiorMenuCustom, fileName, cfg);
-
-        charSlots.delete();
+        FileUtils.loadGUI(superiorMenuCustom, fileName, cfg);
 
         superiorMenuCustom.markCompleted();
     }
 
-    public static void openInventory(SuperiorPlayer superiorPlayer, String fileName, SuperiorMenu previousMenu){
+    public static void openInventory(SuperiorPlayer superiorPlayer, String fileName, ISuperiorMenu previousMenu){
         new SuperiorMenuCustom(superiorPlayer, fileName).open(previousMenu);
     }
 

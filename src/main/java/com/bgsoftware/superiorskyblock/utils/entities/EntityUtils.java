@@ -2,8 +2,7 @@ package com.bgsoftware.superiorskyblock.utils.entities;
 
 import com.bgsoftware.superiorskyblock.SuperiorSkyblockPlugin;
 import com.bgsoftware.superiorskyblock.api.wrappers.SuperiorPlayer;
-import com.bgsoftware.superiorskyblock.utils.key.Key;
-import com.bgsoftware.superiorskyblock.utils.registry.Registry;
+import com.bgsoftware.superiorskyblock.key.Key;
 import org.bukkit.Material;
 import org.bukkit.entity.AbstractHorse;
 import org.bukkit.entity.Ambient;
@@ -26,8 +25,11 @@ import org.bukkit.inventory.HorseInventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.projectiles.ProjectileSource;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -35,56 +37,58 @@ import java.util.stream.Collectors;
 public final class EntityUtils {
 
     private static final SuperiorSkyblockPlugin plugin = SuperiorSkyblockPlugin.getPlugin();
-    private static final Registry<UUID, ItemStack[]> entityContent = Registry.createRegistry();
+    private static final Map<UUID, List<ItemStack>> entityContent = new HashMap<>();
 
     private EntityUtils(){
 
     }
 
     public static boolean isEquipment(LivingEntity livingEntity, ItemStack itemStack){
+        List<ItemStack> entityEquipment = entityContent.get(livingEntity.getUniqueId());
+
+        if(entityEquipment == null) {
+            cacheEntityEquipment(livingEntity);
+            entityEquipment = entityContent.get(livingEntity.getUniqueId());
+        }
+
+        return entityEquipment.stream().anyMatch(equipmentItem -> equipmentItem != null &&
+                equipmentItem.getType() == itemStack.getType());
+    }
+
+    public static void cacheEntityEquipment(LivingEntity livingEntity){
+        List<ItemStack> entityEquipment = new ArrayList<>(Arrays.asList(plugin.getNMSEntities().getEquipment(livingEntity.getEquipment())));
+
         if(livingEntity instanceof Pig){
-            return ((Pig) livingEntity).hasSaddle() && itemStack.getType() == Material.SADDLE;
+            if(((Pig) livingEntity).hasSaddle())
+                entityEquipment.add(new ItemStack(Material.SADDLE));
         }
         else if(livingEntity instanceof Horse){
             HorseInventory horseInventory = ((Horse) livingEntity).getInventory();
-            List<ItemStack> itemStacks = Arrays.stream(horseInventory.getContents()).filter(Objects::nonNull).collect(Collectors.toList());
+            entityEquipment.addAll(Arrays.stream(horseInventory.getContents()).filter(Objects::nonNull).collect(Collectors.toList()));
 
-            itemStacks.add(new ItemStack(Material.CHEST));
+            entityEquipment.add(new ItemStack(Material.CHEST));
 
             if(horseInventory.getSaddle() != null)
-                itemStacks.add(horseInventory.getSaddle());
+                entityEquipment.add(horseInventory.getSaddle());
             if(horseInventory.getArmor() != null)
-                itemStacks.add(horseInventory.getArmor());
-
-            return itemStacks.contains(itemStack);
+                entityEquipment.add(horseInventory.getArmor());
         }
 
         try{
             if(livingEntity instanceof AbstractHorse){
                 AbstractHorseInventory horseInventory = ((AbstractHorse) livingEntity).getInventory();
-                List<ItemStack> itemStacks = Arrays.stream(horseInventory.getContents()).filter(Objects::nonNull).collect(Collectors.toList());
+                entityEquipment.addAll(Arrays.stream(horseInventory.getContents()).filter(Objects::nonNull).collect(Collectors.toList()));
 
-                itemStacks.add(new ItemStack(Material.CHEST));
+                entityEquipment.add(new ItemStack(Material.CHEST));
 
                 if(horseInventory.getSaddle() != null)
-                    itemStacks.add(horseInventory.getSaddle());
+                    entityEquipment.add(horseInventory.getSaddle());
                 if(horseInventory instanceof HorseInventory && ((HorseInventory) horseInventory).getArmor() != null)
-                    itemStacks.add(((HorseInventory) horseInventory).getArmor());
-
-                return itemStacks.contains(itemStack);
+                    entityEquipment.add(((HorseInventory) horseInventory).getArmor());
             }
         }catch(Throwable ignored){}
 
-        ItemStack[] entityEquipment = entityContent.get(livingEntity.getUniqueId());
-
-        if(entityEquipment == null)
-            entityEquipment = plugin.getNMSAdapter().getEquipment(livingEntity.getEquipment());
-
-        return contains(entityEquipment, itemStack);
-    }
-
-    public static void cacheEntityEquipment(LivingEntity livingEntity){
-        entityContent.add(livingEntity.getUniqueId(), plugin.getNMSAdapter().getEquipment(livingEntity.getEquipment()));
+        entityContent.put(livingEntity.getUniqueId(), entityEquipment);
     }
 
     public static void clearEntityEquipment(LivingEntity livingEntity){
@@ -110,18 +114,6 @@ public final class EntityUtils {
                 Key.of("MINECART" + (key.getSubKey().isEmpty() ? "" : ":" + key.getSubKey())) : key;
     }
 
-    public static EntityType getEntityTypeOrUnknown(com.bgsoftware.superiorskyblock.api.key.Key key){
-        try{
-            return EntityType.valueOf(key.toString());
-        }catch (Exception ex){
-            try{
-                return EntityType.valueOf(key.getGlobalKey());
-            }catch (Exception ignored) {}
-        }
-
-        return EntityType.UNKNOWN;
-    }
-
     public static boolean canHaveLimit(EntityType entityType){
         Class<?> entityClass = entityType.getEntityClass();
         return entityType.name().contains("MINECART") || (entityClass != null &&
@@ -145,15 +137,6 @@ public final class EntityUtils {
         Class<? extends Entity> entityClass = entityType.getEntityClass();
         return entityClass != null && (Creature.class.isAssignableFrom(entityType.getEntityClass()) ||
                 Ambient.class.isAssignableFrom(entityType.getEntityClass()));
-    }
-
-    private static <T> boolean contains(T[] arr, T val){
-        for(T element : arr){
-            if(val.equals(element))
-                return true;
-        }
-
-        return false;
     }
 
 }

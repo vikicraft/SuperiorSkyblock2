@@ -2,9 +2,15 @@ package com.bgsoftware.superiorskyblock.utils.chunks;
 
 import com.bgsoftware.superiorskyblock.SuperiorSkyblockPlugin;
 import com.bgsoftware.superiorskyblock.api.island.Island;
-import com.bgsoftware.superiorskyblock.handlers.GridHandler;
+import com.bgsoftware.superiorskyblock.database.bridge.IslandsDatabaseBridge;
+import com.bgsoftware.superiorskyblock.world.GridHandler;
 import com.bgsoftware.superiorskyblock.island.SpawnIsland;
-import com.bgsoftware.superiorskyblock.utils.registry.Registry;
+import com.bgsoftware.superiorskyblock.utils.islands.IslandSerializer;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonSyntaxException;
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
 import org.bukkit.ChunkSnapshot;
@@ -12,15 +18,16 @@ import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 public final class ChunksTracker {
 
-    private static final Registry<Island, Set<ChunkPosition>> dirtyChunks = Registry.createRegistry();
+    private static final Map<Island, Set<ChunkPosition>> dirtyChunks = new ConcurrentHashMap<>();
     private static final SuperiorSkyblockPlugin plugin = SuperiorSkyblockPlugin.getPlugin();
+    private static final Gson gson = new GsonBuilder().create();
 
     private ChunksTracker(){
 
@@ -66,37 +73,38 @@ public final class ChunksTracker {
     }
 
     public static String serialize(Island island){
-        Set<ChunkPosition> dirtyChunks = ChunksTracker.dirtyChunks.get(island);
-
-        if(dirtyChunks == null)
-            return "";
-
-        Map<String, StringBuilder> worlds = new HashMap<>();
-
-        for(ChunkPosition dirtyChunk : dirtyChunks){
-            worlds.computeIfAbsent(dirtyChunk.getWorldName(), sb -> new StringBuilder())
-                    .append(";").append(dirtyChunk.getX()).append(",").append(dirtyChunk.getZ());
-        }
-
-        StringBuilder stringBuilder = new StringBuilder();
-
-        for(Map.Entry<String, StringBuilder> entry : worlds.entrySet())
-            stringBuilder.append(entry.getKey()).append("=").append(entry.getValue().substring(1)).append("|");
-
-        return stringBuilder.toString();
+        Set<ChunkPosition> dirtyChunks = ChunksTracker.dirtyChunks.getOrDefault(island, new HashSet<>());
+        return IslandSerializer.serializeDirtyChunks(dirtyChunks);
     }
 
     public static void deserialize(GridHandler grid, Island island, String serialized){
-        if(serialized != null && !serialized.isEmpty()) {
-            if (serialized.contains("|")) {
-                deserializeNew(island, serialized);
-            } else {
-                deserializeOld(grid, island, serialized);
+        try{
+            if(serialized == null || serialized.isEmpty()) throw new JsonSyntaxException("");
+            JsonObject dirtyChunksObject = gson.fromJson(serialized, JsonObject.class);
+            dirtyChunksObject.entrySet().forEach(dirtyChunkEntry -> {
+                String worldName = dirtyChunkEntry.getKey();
+                JsonArray dirtyChunksArray = dirtyChunkEntry.getValue().getAsJsonArray();
+
+                dirtyChunksArray.forEach(dirtyChunkElement -> {
+                    String[] chunkPositionSections = dirtyChunkElement.getAsString().split(",");
+                    try {
+                        markDirty(island, ChunkPosition.of(worldName, Integer.parseInt(chunkPositionSections[0]),
+                                Integer.parseInt(chunkPositionSections[1])), false);
+                    }catch(Exception ignored){}
+                });
+            });
+        }catch (JsonSyntaxException ex){
+            if(serialized != null && !serialized.isEmpty()) {
+                if (serialized.contains("|")) {
+                    deserializeOldV1(island, serialized);
+                } else if(grid != null) {
+                    deserializeOldV2(grid, island, serialized);
+                }
             }
         }
     }
 
-    private static void deserializeOld(GridHandler grid, Island island, String serialized){
+    private static void deserializeOldV2(GridHandler grid, Island island, String serialized){
         try {
             String[] dirtyChunkSections = serialized.split(";");
             for (String dirtyChunk : dirtyChunkSections) {
@@ -114,7 +122,7 @@ public final class ChunksTracker {
         }catch(Exception ignored){}
     }
 
-    private static void deserializeNew(Island island, String serialized){
+    private static void deserializeOldV1(Island island, String serialized){
         String[] serializedSections = serialized.split("\\|");
 
         for(String section : serializedSections) {
@@ -141,7 +149,7 @@ public final class ChunksTracker {
             island = getIsland(plugin.getGrid(), chunkPosition);
 
         if(dirtyChunks.containsKey(island) && dirtyChunks.get(island).remove(chunkPosition) && save)
-            island.getDataHandler().saveDirtyChunks();
+            IslandsDatabaseBridge.saveDirtyChunks(island);
     }
 
     public static void markDirty(Island island, ChunkPosition chunkPosition, boolean save){
@@ -149,7 +157,7 @@ public final class ChunksTracker {
             island = getIsland(plugin.getGrid(), chunkPosition);
 
         if(dirtyChunks.computeIfAbsent(island, s -> new HashSet<>()).add(chunkPosition) && save && !(island instanceof SpawnIsland))
-            island.getDataHandler().saveDirtyChunks();
+            IslandsDatabaseBridge.saveDirtyChunks(island);
     }
 
 }

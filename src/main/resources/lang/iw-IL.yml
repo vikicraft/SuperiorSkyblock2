@@ -39,6 +39,9 @@ BLOCK_LEVEL_WORTHLESS: '&e&lתודוקנ | &7םולכ הווש אל {0} קולב
 BLOCK_VALUE: '&e&lיווש | &7{1} אוה {0} קולבה לש יוושה.'
 BLOCK_VALUE_WORTHLESS: '&e&lיווש | &7םולכ הווש אל {0} קולבה.'
 BONUS_SET_SUCCESS: '&e&lיא | &7{0} ל החלצהב ןכדוע יאה לש סונובה.'
+BORDER_PLAYER_COLOR_NAME_BLUE: 'Blue'
+BORDER_PLAYER_COLOR_NAME_RED: 'Red'
+BORDER_PLAYER_COLOR_NAME_GREEN: 'Green'
 BORDER_PLAYER_COLOR_UPDATED: '&e&lלובג | &7{0} ל החלצהב הנוש ךלש לובגה עבצ.'
 BUILD_OUTSIDE_ISLAND: '&c&lהאיגש | &7ךלש יאל ץוחמ תונבל לוכי אל התא.'
 CANNOT_SET_ROLE: '&c&lהאיגש | &7{0} ל ןקחשה לש הגרדה תא תונשל לוכי אל התא.'
@@ -106,6 +109,7 @@ COMMAND_ARGUMENT_ALL_ISLANDS: '*'
 COMMAND_ARGUMENT_ALL_PLAYERS: '*'
 COMMAND_ARGUMENT_AMOUNT: תומכ
 COMMAND_ARGUMENT_BIOME: 'biome'
+COMMAND_ARGUMENT_COMMAND: 'command...'
 COMMAND_ARGUMENT_DISCORD: '...דרוקסיד'
 COMMAND_ARGUMENT_EFFECT: 'potion-effect'
 COMMAND_ARGUMENT_EMAIL: ליימיא
@@ -120,6 +124,7 @@ COMMAND_ARGUMENT_MATERIAL: רמוח
 COMMAND_ARGUMENT_MENU: 'menu-name'
 COMMAND_ARGUMENT_MESSAGE: '...העדוה'
 COMMAND_ARGUMENT_MISSION_NAME: המישמה םש
+COMMAND_ARGUMENT_MODULE_NAME: 'module-name'
 COMMAND_ARGUMENT_MULTIPLIER: סונוב
 COMMAND_ARGUMENT_NAME: םש
 COMMAND_ARGUMENT_NEW_LEADER: שדח גיהנמ
@@ -163,6 +168,7 @@ COMMAND_DESCRIPTION_ADMIN_BYPASS: הפיקע בצמ ףילחהל.
 COMMAND_DESCRIPTION_ADMIN_CHEST: 'Open island''s chest of another island.'
 COMMAND_DESCRIPTION_ADMIN_CLEAR_GENERATOR: Clear generator rates for a specific island.
 COMMAND_DESCRIPTION_ADMIN_CLOSE: רוביצל יא רוגסל.
+COMMAND_DESCRIPTION_ADMIN_CMD_ALL: 'Execute a command for all members of islands.'
 COMMAND_DESCRIPTION_ADMIN_COUNT: 'Check a block count on a specific island.'
 COMMAND_DESCRIPTION_ADMIN_DEBUG: 'Toggle debug outputs.'
 COMMAND_DESCRIPTION_ADMIN_DEL_WARP: 'Delete a warp for an island.'
@@ -173,6 +179,7 @@ COMMAND_DESCRIPTION_ADMIN_GIVE_DISBANDS: ןקחשל םייא תוקיחמ תתל
 COMMAND_DESCRIPTION_ADMIN_IGNORE: רתויב םיבוטה םייאה תמישרמ יא דירוהל.
 COMMAND_DESCRIPTION_ADMIN_JOIN: הנמזה אלל יאל סנכיהל.
 COMMAND_DESCRIPTION_ADMIN_KICK: 'Kick a player from his island.'
+COMMAND_DESCRIPTION_ADMIN_MODULES: 'Manage modules of the plugin.'
 COMMAND_DESCRIPTION_ADMIN_MISSION: ןקחש רובע המישמ לש סוטטס תונשל.
 COMMAND_DESCRIPTION_ADMIN_MSG: העדוה ןקחשל חולשל.
 COMMAND_DESCRIPTION_ADMIN_MSG_ALL: העדוה יא לש םינקחשה לכל חולשל.
@@ -336,6 +343,8 @@ GENERATOR_UPDATED_NAME: '&e&lיא | &7החלצהב ןכדוע {1} יאה לש ר
   לש תומכה.'
 GENERATOR_UPDATED_ALL: '&e&lיא | &7החלצהב ןכדוע םייאה לכ לש רוטארנגב {0} רמוחה
   לש תומכה.'
+GLOBAL_COMMAND_EXECUTED: '&e&lIsland | &7Successfully executed the command on {0}''s island members!'
+GLOBAL_COMMAND_EXECUTED_NAME: '&e&lIsland | &7Successfully executed the command on the island members of {0}!'
 GLOBAL_MESSAGE_SENT: '&e&lיא | &7{0} לש יאה לש םינקחשל החלצהב החלשנ העדוהה!'
 GLOBAL_MESSAGE_SENT_NAME: '&e&lיא | &7{0} יאה לש םינקחשל החלצהב החלשנ העדוהה!'
 GLOBAL_TITLE_SENT: '&e&lIsland | &7Successfully sent to {0}''s island members the title!'
@@ -373,6 +382,7 @@ INVALID_LIMIT: '&c&lהאיגש | &7{0} תיקוח אל הלבגמ.'
 INVALID_MATERIAL: '&c&lהאיגש | &7{0} תיקוח אל רמוח.'
 INVALID_MATERIAL_DATA: '&c&lError | &7Invalid material-data {0}.'
 INVALID_MISSION: '&c&lהאיגש | &7{0} תיקוח אל המישמ.'
+INVALID_MODULE: '&c&lError | &7Invalid module {0}.'
 INVALID_MULTIPLIER: '&c&lהאיגש | &7{0} יקוח אל סונוב.'
 INVALID_PAGE: '&c&lError | &7Invalid page {0}.'
 INVALID_PERCENTAGE: '&c&lהאיגש | &7100 ל 0 ןיב תויהל בייח זוחא.'
@@ -484,6 +494,8 @@ ISLAND_INFO_WORTH: '&e&lיא | &7יווש: {0}'
 ISLAND_OPENED: '&e&lיא | &7החלצהב רוביצל חתפנ יאה.'
 ISLAND_PREVIEW_CANCEL_DISTANCE: '&e&lPreview | &7You went too far away, and you are no longer in preview mode.'
 ISLAND_PREVIEW_CANCEL: '&e&lPreview | &7You cancelled the preview mode.'
+ISLAND_PREVIEW_CONFIRM_TEXT: 'CONFIRM'
+ISLAND_PREVIEW_CANCEL_TEXT: 'CANCEL'
 ISLAND_PREVIEW_START: |
   &e&lPreview | &7You started the preview mode for the schematic {0}.
   &e&lPreview | &7Type &a&lCONFIRM &7to create a new island, or &c&lCANCEL &7to cancel the preview mode.
@@ -499,7 +511,9 @@ ISLAND_TOP_STATUS_ONLINE: '&a(רבוחמ)'
 ISLAND_WARP_PUBLIC: ''
 ISLAND_WARP_PRIVATE: '&c[יטרפ]'
 ISLAND_WAS_CLOSED: '&e&lיא | &7&oןואפסל תרגוש ןכלו ,רוביצל רגסנ וב תייהש יאה...'
+ISLAND_WORTH_ERROR: '&c&lError | &7An unexpected error occurred while calculating your island. Contact administrators if the issue persists.'
 ISLAND_WORTH_RESULT: '&e&lיא | &7אוה ךלש יאה יווש {0} [המר {1}]'
+ISLAND_WORTH_TIME_OUT: '&c&lError | &7The calculation task has timed out. Try again later...'
 JOIN_ADMIN_ANNOUNCEMENT: '&e&lיא | &7ךלש יאה לא סנכנ {0}.'
 JOIN_ANNOUNCEMENT: '&e&lיא | &7ךלש יאה לא סנכנ {0}.'
 JOIN_FULL_ISLAND: '&c&lהאיגש | &7תרתומה םינקחשה תומכ תלבגמל עיגה יאה.'
@@ -535,6 +549,17 @@ MISSION_STATUS_COMPLETE: '&e&lתומישמ | &7{1} ןקחשל העצובל הת�
 MISSION_STATUS_COMPLETE_ALL: '&e&lMission | &7Changed the status of all the missions to completed for {0}.'
 MISSION_STATUS_RESET: '&e&lתומישמ | &7{1} ןקחשל הלחתוא {0} המישמה לש סוטטסה.'
 MISSION_STATUS_RESET_ALL: '&e&lMission | &7Reset the status of all the missions for {0}.'
+MODULE_ALREADY_INITIALIZED: '&e&lModule | &7This module is already loaded.'
+MODULE_INFO: |
+  &e&lModule | &7{0} by {1}
+  &e&lModule | &7&m--------------------
+  &e&lModule | &7{2}
+MODULE_LOADED_SUCCESS: '&e&lModule | &7Successfully loaded the module {0}.'
+MODULE_LOADED_FAILURE: '&e&lModule | &7Couldn''t load the module {0}. Check out the console for more information.'
+MODULE_UNLOADED_SUCCESS: '&e&lModule | &7Successfully unloaded the module.'
+MODULES_LIST: '&fModules ({0}): {1}'
+MODULES_LIST_MODULE_NAME: '&a{0}'
+MODULES_LIST_SEPARATOR: '&f, '
 NAME_ANNOUNCEMENT: '&e&lיא | &7{1} ל ולש יאה םש תא הניש {0}.'
 NAME_BLACKLISTED: '&c&lהאיגש | &7הזה םשב שמתשהל לוכי אל התא.'
 NAME_CHAT_FORMAT: '&8[&e{0}&8] &r'
@@ -702,6 +727,7 @@ WARP_CATEGORY_ICON_NEW_LORE: |
 WARP_CATEGORY_ICON_NEW_NAME: '&e&lWarps | &7Enter a name (Type "-cancel" to cancel):'
 WARP_CATEGORY_ICON_NEW_TYPE: '&e&lWarps | &7Enter a new material type (Type "-cancel" to cancel):'
 WARP_CATEGORY_ICON_UPDATED: '&e&lWarps | &7Successfully updated the category''s icon.'
+WARP_CATEGORY_ILLEGAL_NAME: '&c&lError | &7You can only use alphabetical letters, numbers and ''_'' for warp category names.'
 WARP_CATEGORY_SLOT: '&e&lWarps | &7Enter a new slot (Type "-cancel" to cancel):'
 WARP_CATEGORY_SLOT_ALREADY_TAKEN: '&c&lError | &7This slot is already taken by another category.'
 WARP_CATEGORY_SLOT_SUCCESS: '&e&lWarps | &7Successfully changed the category''s slot to {0}.'
@@ -714,6 +740,7 @@ WARP_ICON_NEW_LORE: |
 WARP_ICON_NEW_NAME: '&e&lWarps | &7Enter a name (Type "-cancel" to cancel):'
 WARP_ICON_NEW_TYPE: '&e&lWarps | &7Enter a new material type (Type "-cancel" to cancel):'
 WARP_ICON_UPDATED: '&e&lWarps | &7Successfully updated the warp''s icon.'
+WARP_ILLEGAL_NAME: '&c&lError | &7You can only use alphabetical letters, numbers and ''_'' for warp names.'
 WARP_LOCATION_UPDATE: '&e&lWarps | &7Successfully updated the warp''s location to your location.'
 WARP_PUBLIC_UPDATE: '&e&lWarps | &7Successfully opened the warp to the public.'
 WARP_PRIVATE_UPDATE: '&e&lWarps | &7Successfully closed the warp to the public.'

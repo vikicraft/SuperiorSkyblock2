@@ -6,9 +6,8 @@ import com.bgsoftware.superiorskyblock.api.island.Island;
 import com.bgsoftware.superiorskyblock.api.wrappers.SuperiorPlayer;
 import com.bgsoftware.superiorskyblock.commands.IAdminIslandCommand;
 import com.bgsoftware.superiorskyblock.utils.StringUtils;
-import com.bgsoftware.superiorskyblock.utils.commands.CommandArguments;
-import com.bgsoftware.superiorskyblock.utils.commands.CommandTabCompletes;
-import com.bgsoftware.superiorskyblock.utils.threads.Executor;
+import com.bgsoftware.superiorskyblock.commands.CommandArguments;
+import com.bgsoftware.superiorskyblock.commands.CommandTabCompletes;
 import org.bukkit.block.Biome;
 import org.bukkit.command.CommandSender;
 
@@ -69,7 +68,7 @@ public final class CmdAdminSetBiome implements IAdminIslandCommand {
         if(biome == null)
             return;
 
-        Executor.data(() -> islands.forEach(island -> island.setBiome(biome)));
+        islands.forEach(island -> island.setBiome(biome));
 
         if(islands.size() > 1)
             Locale.CHANGED_BIOME_ALL.send(sender, StringUtils.format(biome.name()));

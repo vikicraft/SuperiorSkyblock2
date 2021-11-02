@@ -7,8 +7,8 @@ import com.bgsoftware.superiorskyblock.api.wrappers.SuperiorPlayer;
 import com.bgsoftware.superiorskyblock.commands.IAdminIslandCommand;
 import com.bgsoftware.superiorskyblock.utils.StringUtils;
 import com.bgsoftware.superiorskyblock.utils.chunks.ChunkPosition;
-import com.bgsoftware.superiorskyblock.utils.commands.CommandArguments;
-import com.bgsoftware.superiorskyblock.utils.commands.CommandTabCompletes;
+import com.bgsoftware.superiorskyblock.commands.CommandArguments;
+import com.bgsoftware.superiorskyblock.commands.CommandTabCompletes;
 import com.bgsoftware.superiorskyblock.utils.islands.IslandUtils;
 import org.bukkit.World;
 import org.bukkit.command.CommandSender;
@@ -69,28 +69,31 @@ public final class CmdAdminResetWorld implements IAdminIslandCommand {
         if(environment == null)
             return;
 
-        if(environment == World.Environment.NORMAL){
+        if(environment == plugin.getSettings().getWorlds().getDefaultWorld()){
             Locale.INVALID_ENVIRONMENT.send(sender, args[3]);
             return;
         }
 
         islands.forEach(island -> {
-            World world = island.getCenter(environment).getWorld();
+            World world;
+
+            try {
+                world = island.getCenter(environment).getWorld();
+            }catch (NullPointerException ex){
+                return;
+            }
 
             // Sending the players that are in that world to the main island.
             // If the world that will be reset is the normal world, they will be teleported to spawn.
             for(SuperiorPlayer superiorPlayer : island.getAllPlayersInside()){
+                assert superiorPlayer.getWorld() != null;
                 if(superiorPlayer.getWorld().equals(world))
                     superiorPlayer.teleport(island);
             }
 
             // Resetting the chunks
             List<ChunkPosition> chunkPositions = IslandUtils.getChunkCoords(island, world, true, true);
-            for(int i = 0; i < chunkPositions.size() - 1; i++)
-                IslandUtils.deleteChunk(island, chunkPositions.get(i), null);
-
-            IslandUtils.deleteChunk(island, chunkPositions.get(chunkPositions.size() - 1),
-                    () -> island.calcIslandWorth(null));
+            IslandUtils.deleteChunks(island, chunkPositions, () -> island.calcIslandWorth(null));
 
             island.setSchematicGenerate(environment, false);
         });
@@ -105,7 +108,31 @@ public final class CmdAdminResetWorld implements IAdminIslandCommand {
 
     @Override
     public List<String> adminTabComplete(SuperiorSkyblockPlugin plugin, CommandSender sender, Island island, String[] args) {
-        return args.length == 4 ? CommandTabCompletes.getCustomComplete(args[3], "nether", "the_end") : new ArrayList<>();
+        if(args.length != 4)
+            return new ArrayList<>();
+
+        List<String> environments = new ArrayList<>();
+
+        for(World.Environment environment : World.Environment.values()){
+            if(environment != plugin.getSettings().getWorlds().getDefaultWorld()) {
+                switch (environment){
+                    case NORMAL:
+                        if(island.isNormalEnabled())
+                            environments.add(environment.name().toLowerCase());
+                        break;
+                    case NETHER:
+                        if(island.isNetherEnabled())
+                            environments.add(environment.name().toLowerCase());
+                        break;
+                    case THE_END:
+                        if(island.isEndEnabled())
+                            environments.add(environment.name().toLowerCase());
+                        break;
+                }
+            }
+        }
+
+        return CommandTabCompletes.getCustomComplete(args[3], environments.toArray(new String[0]));
     }
 
 }

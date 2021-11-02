@@ -1,5 +1,7 @@
 package com.bgsoftware.superiorskyblock.player;
 
+import com.bgsoftware.superiorskyblock.SuperiorSkyblockPlugin;
+import com.bgsoftware.superiorskyblock.api.data.DatabaseBridge;
 import com.bgsoftware.superiorskyblock.api.data.PlayerDataHandler;
 import com.bgsoftware.superiorskyblock.api.enums.BorderColor;
 import com.bgsoftware.superiorskyblock.api.enums.HitActionResult;
@@ -9,6 +11,8 @@ import com.bgsoftware.superiorskyblock.api.island.PlayerRole;
 import com.bgsoftware.superiorskyblock.api.missions.Mission;
 import com.bgsoftware.superiorskyblock.api.wrappers.BlockPosition;
 import com.bgsoftware.superiorskyblock.api.wrappers.SuperiorPlayer;
+import com.bgsoftware.superiorskyblock.database.EmptyDataHandler;
+import com.bgsoftware.superiorskyblock.database.bridge.EmptyDatabaseBridge;
 import com.bgsoftware.superiorskyblock.island.SPlayerRole;
 import com.bgsoftware.superiorskyblock.utils.teleport.TeleportUtils;
 import org.bukkit.Location;
@@ -17,7 +21,10 @@ import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
+import org.bukkit.scheduler.BukkitTask;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -27,6 +34,8 @@ import java.util.UUID;
 import java.util.function.Consumer;
 
 public final class SuperiorNPCPlayer implements SuperiorPlayer {
+
+    private static final SuperiorSkyblockPlugin plugin = SuperiorSkyblockPlugin.getPlugin();
 
     private final Entity npc;
 
@@ -50,7 +59,7 @@ public final class SuperiorNPCPlayer implements SuperiorPlayer {
     }
 
     @Override
-    public void setTextureValue(String textureValue) {
+    public void setTextureValue(@Nonnull String textureValue) {
 
     }
 
@@ -85,12 +94,27 @@ public final class SuperiorNPCPlayer implements SuperiorPlayer {
     }
 
     @Override
+    public void runIfOnline(Consumer<Player> toRun) {
+
+    }
+
+    @Override
     public boolean hasFlyGamemode() {
         return false;
     }
 
     @Override
     public boolean isAFK() {
+        return false;
+    }
+
+    @Override
+    public boolean isVanished() {
+        return false;
+    }
+
+    @Override
+    public boolean isShownAsOnline() {
         return false;
     }
 
@@ -116,7 +140,7 @@ public final class SuperiorNPCPlayer implements SuperiorPlayer {
 
     @Override
     public World getWorld() {
-        return getLocation().getWorld();
+        return npc.getLocation().getWorld();
     }
 
     @Override
@@ -141,7 +165,7 @@ public final class SuperiorNPCPlayer implements SuperiorPlayer {
 
     @Override
     public void teleport(Island island, Consumer<Boolean> teleportResult) {
-        teleport(island.getCenter(World.Environment.NORMAL), teleportResult);
+        teleport(island.getCenter(plugin.getSettings().getWorlds().getDefaultWorld()), teleportResult);
     }
 
     @Override
@@ -150,19 +174,8 @@ public final class SuperiorNPCPlayer implements SuperiorPlayer {
     }
 
     @Override
-    public UUID getTeamLeader() {
-        return npc.getUniqueId();
-    }
-
-    @Override
     public SuperiorPlayer getIslandLeader() {
         return this;
-    }
-
-
-    @Override
-    public void setTeamLeader(UUID teamLeader) {
-
     }
 
     @Override
@@ -173,6 +186,11 @@ public final class SuperiorNPCPlayer implements SuperiorPlayer {
     @Override
     public Island getIsland() {
         return null;
+    }
+
+    @Override
+    public boolean hasIsland() {
+        return false;
     }
 
     @Override
@@ -217,6 +235,11 @@ public final class SuperiorNPCPlayer implements SuperiorPlayer {
 
     @Override
     public void toggleWorldBorder() {
+
+    }
+
+    @Override
+    public void updateWorldBorder(@Nullable Island island) {
 
     }
 
@@ -356,13 +379,59 @@ public final class SuperiorNPCPlayer implements SuperiorPlayer {
     }
 
     @Override
+    public void setImmunedToPvP(boolean immunedToPvP) {
+
+    }
+
+    @Override
+    public boolean isImmunedToPvP() {
+        return false;
+    }
+
+    @Override
+    public void setLeavingFlag(boolean leavingFlag) {
+
+    }
+
+    @Override
+    public boolean isLeavingFlag() {
+        return false;
+    }
+
+    @Override
+    public void setTeleportTask(@Nullable BukkitTask teleportTask) {
+
+    }
+
+    @Nullable
+    @Override
+    public BukkitTask getTeleportTask() {
+        return null;
+    }
+
+    @Override
+    public void setImmunedToPortals(boolean immuneToPortals) {
+
+    }
+
+    @Override
+    public boolean isImmunedToPortals() {
+        return false;
+    }
+
+    @Override
     public void merge(SuperiorPlayer other) {
 
     }
 
     @Override
     public PlayerDataHandler getDataHandler() {
-        return null;
+        return EmptyDataHandler.getInstance();
+    }
+
+    @Override
+    public DatabaseBridge getDatabaseBridge() {
+        return EmptyDatabaseBridge.getInstance();
     }
 
 }

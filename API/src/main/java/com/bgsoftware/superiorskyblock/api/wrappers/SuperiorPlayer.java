@@ -1,5 +1,6 @@
 package com.bgsoftware.superiorskyblock.api.wrappers;
 
+import com.bgsoftware.superiorskyblock.api.data.DatabaseBridge;
 import com.bgsoftware.superiorskyblock.api.data.PlayerDataHandler;
 import com.bgsoftware.superiorskyblock.api.enums.BorderColor;
 import com.bgsoftware.superiorskyblock.api.enums.HitActionResult;
@@ -12,7 +13,10 @@ import org.bukkit.OfflinePlayer;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
+import org.bukkit.scheduler.BukkitTask;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -58,17 +62,21 @@ public interface SuperiorPlayer {
 
     /**
      * Update the cached name with the current player's name.
+     * When the player is offline, nothing will happen.
      */
     void updateName();
 
     /**
      * Get the player object.
      */
+    @Nullable
     Player asPlayer();
 
     /**
      * Get the offline-player object.
+     * This can return null if the player is invalid, for example - npcs.
      */
+    @Nullable
     OfflinePlayer asOfflinePlayer();
 
     /**
@@ -77,27 +85,49 @@ public interface SuperiorPlayer {
     boolean isOnline();
 
     /**
+     * Execute code only if the player is online.
+     */
+    void runIfOnline(Consumer<Player> toRun);
+
+    /**
      * Check whether or not this player is in a gamemode with fly mode enabled.
+     * When the player is offline, false will be returned.
      */
     boolean hasFlyGamemode();
 
     /**
      * Check whether or not the player is AFK.
+     * When the player is offline, false will be returned.
      */
     boolean isAFK();
 
     /**
+     * Check whether or not the player is vanished.
+     * When the player is offline, false will be returned.
+     */
+    boolean isVanished();
+
+    /**
+     * Checks whether the player is shown as online.
+     * @return false if vanished, in spectator mode or offline.
+     */
+    boolean isShownAsOnline();
+
+    /**
      * Check whether or not the player has a permission.
+     * When the player is offline, false will be returned.
      */
     boolean hasPermission(String permission);
 
     /**
      * Check whether or not the player has a permission without having op.
+     * When the player is offline, false will be returned.
      */
     boolean hasPermissionWithoutOP(String permission);
 
     /**
      * Check whether or not the player has a permission on his island.
+     * When the player doesn't have an island, false will be returned.
      */
     boolean hasPermission(IslandPrivilege permission);
 
@@ -112,9 +142,9 @@ public interface SuperiorPlayer {
      * 5) The target player is inside an island as a visitor and can't take damage.
      * 6) The target player is inside an island as a coop and can't take damage.
      *
-     * @param other The other player to check.
+     * @param otherPlayer The other player to check.
      */
-    HitActionResult canHit(SuperiorPlayer other);
+    HitActionResult canHit(SuperiorPlayer otherPlayer);
 
     /*
      *   Location Methods
@@ -122,12 +152,16 @@ public interface SuperiorPlayer {
 
     /**
      * Get the world that the player is inside.
+     * When the player is offline, null will be returned.
      */
+    @Nullable
     World getWorld();
 
     /**
      * Get the location of the player.
+     * When the player is offline, null will be returned.
      */
+    @Nullable
     Location getLocation();
 
     /**
@@ -139,9 +173,9 @@ public interface SuperiorPlayer {
     /**
      * Teleport the player to a location.
      * @param location The location to teleport the player to.
-     * @param teleportResult The result of the teleportation process. May be null.
+     * @param teleportResult The result of the teleportation process.
      */
-    void teleport(Location location, Consumer<Boolean> teleportResult);
+    void teleport(Location location, @Nullable Consumer<Boolean> teleportResult);
 
     /**
      * Teleport the player to an island.
@@ -154,10 +188,11 @@ public interface SuperiorPlayer {
      * @param island The island to teleport the player to.
      * @param result Consumer that will be ran when task is finished.
      */
-    void teleport(Island island, Consumer<Boolean> result);
+    void teleport(Island island, @Nullable Consumer<Boolean> result);
 
     /**
      * Check whether or not the player is inside their island.
+     * When the player is offline or he doesn't have an island, false will be returned.
      */
     boolean isInsideIsland();
 
@@ -167,38 +202,26 @@ public interface SuperiorPlayer {
 
     /**
      * Get the island owner of the player's island.
-     *
-     * @deprecated getIslandLeader
-     */
-    @Deprecated
-    UUID getTeamLeader();
-
-    /**
-     * Get the island owner of the player's island.
      */
     SuperiorPlayer getIslandLeader();
 
     /**
      * Set the island owner of the player's island.
      * !Can cause issues if not used properly!
-     * @param teamLeader The island owner's uuid.
-     *
-     * @deprecated See setIslandLeader(SuperiorPlayer)
+     * @param islandLeader The island owner's player.
      */
-    @Deprecated
-    void setTeamLeader(UUID teamLeader);
-
-    /**
-     * Set the island owner of the player's island.
-     * !Can cause issues if not used properly!
-     * @param superiorPlayer The island owner's player.
-     */
-    void setIslandLeader(SuperiorPlayer superiorPlayer);
+    void setIslandLeader(SuperiorPlayer islandLeader);
 
     /**
      * Get the island of the player.
      */
+    @Nullable
     Island getIsland();
+
+    /**
+     * Check if this player is a member of an island.
+     */
+    boolean hasIsland();
 
     /**
      * Get the role of the player.
@@ -250,6 +273,12 @@ public interface SuperiorPlayer {
      * Toggle the world border for the player.
      */
     void toggleWorldBorder();
+
+    /**
+     * Update world border for this player.
+     * @param island The island the player should see the border of.
+     */
+    void updateWorldBorder(@Nullable Island island);
 
     /**
      * Check whether or not the blocks stacker mode is enabled for the player.
@@ -345,7 +374,7 @@ public interface SuperiorPlayer {
      * Set the first schematic position of the player.
      * @param block The block to change the position to.
      */
-    void setSchematicPos1(Block block);
+    void setSchematicPos1(@Nullable Block block);
 
     /**
      * Get the second schematic position of the player. May be null.
@@ -356,7 +385,7 @@ public interface SuperiorPlayer {
      * Set the second schematic position of the player.
      * @param block The block to change the position to.
      */
-    void setSchematicPos2(Block block);
+    void setSchematicPos2(@Nullable Block block);
 
     /*
      *   Missions Methods
@@ -407,13 +436,68 @@ public interface SuperiorPlayer {
      */
 
     /**
+     * Set immunity to PvP for this player.
+     * @param immunedToPvP Whether or not the player should be immuned to PvP.
+     */
+    void setImmunedToPvP(boolean immunedToPvP);
+
+    /**
+     * Whether the player is immuned to PvP or not.
+     */
+    boolean isImmunedToPvP();
+
+    /**
+     * Set whether or not the player has just left an island's area.
+     * If set to true, the player will not be able to escape islands.
+     * @param leavingFlag Whether or not the island has left an island's area.
+     */
+    void setLeavingFlag(boolean leavingFlag);
+
+    /**
+     * Whether the player has just left an island's area or not.
+     */
+    boolean isLeavingFlag();
+
+    /**
+     * Set a teleportation task for the player.
+     * This is used for warmpups, etc.
+     * @param teleportTask The teleport task to set.
+     */
+    void setTeleportTask(@Nullable BukkitTask teleportTask);
+
+    /**
+     * Get the current active teleport task of the player.
+     */
+    @Nullable
+    BukkitTask getTeleportTask();
+
+    /**
+     * Set whether or not the player is immuned to portals.
+     * If set to true, players will not be able to get teleported through portals.
+     * @param immuneToPortals Whether the player should be immuned or not.
+     */
+    void setImmunedToPortals(boolean immuneToPortals);
+
+    /**
+     * Whether the player is immuned to portals or not.
+     */
+    boolean isImmunedToPortals();
+
+    /**
      * Merge another player into this object.
      */
-    void merge(SuperiorPlayer other);
+    void merge(SuperiorPlayer otherPlayer);
 
     /**
      * Get the data handler of the object.
+     * @deprecated See getDatabaseBridge
      */
+    @Deprecated
     PlayerDataHandler getDataHandler();
+
+    /**
+     * Get the database bridge of the player.
+     */
+    DatabaseBridge getDatabaseBridge();
 
 }

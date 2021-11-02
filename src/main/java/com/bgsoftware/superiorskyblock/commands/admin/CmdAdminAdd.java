@@ -6,8 +6,8 @@ import com.bgsoftware.superiorskyblock.api.island.Island;
 import com.bgsoftware.superiorskyblock.api.wrappers.SuperiorPlayer;
 import com.bgsoftware.superiorskyblock.commands.IAdminIslandCommand;
 import com.bgsoftware.superiorskyblock.island.SPlayerRole;
-import com.bgsoftware.superiorskyblock.utils.commands.CommandArguments;
-import com.bgsoftware.superiorskyblock.utils.commands.CommandTabCompletes;
+import com.bgsoftware.superiorskyblock.commands.CommandArguments;
+import com.bgsoftware.superiorskyblock.commands.CommandTabCompletes;
 import com.bgsoftware.superiorskyblock.utils.events.EventsCaller;
 import com.bgsoftware.superiorskyblock.utils.islands.IslandUtils;
 import org.bukkit.command.CommandSender;
@@ -63,7 +63,7 @@ public final class CmdAdminAdd implements IAdminIslandCommand {
 
     @Override
     public void execute(SuperiorSkyblockPlugin plugin, CommandSender sender, SuperiorPlayer superiorPlayer, Island island, String[] args) {
-        SuperiorPlayer targetPlayer = CommandArguments.getPlayer(plugin, sender, args[2]);
+        SuperiorPlayer targetPlayer = CommandArguments.getPlayer(plugin, sender, args[3]);
 
         if(targetPlayer == null)
             return;
@@ -90,15 +90,16 @@ public final class CmdAdminAdd implements IAdminIslandCommand {
             Locale.ADMIN_ADD_PLAYER.send(sender, targetPlayer.getName(), superiorPlayer.getName());
         }
 
-        if(plugin.getSettings().teleportOnJoin && targetPlayer.isOnline())
+        if(plugin.getSettings().isTeleportOnJoin() && targetPlayer.isOnline())
             targetPlayer.teleport(island);
-        if(plugin.getSettings().clearOnJoin)
-            plugin.getNMSAdapter().clearInventory(targetPlayer.asPlayer());
+        if(plugin.getSettings().isClearOnJoin())
+            plugin.getNMSPlayers().clearInventory(targetPlayer.asOfflinePlayer());
     }
 
     @Override
     public List<String> adminTabComplete(SuperiorSkyblockPlugin plugin, CommandSender sender, Island island, String[] args) {
-        return args.length == 4 ? CommandTabCompletes.getCustomComplete(args[3], "worth", "level") : new ArrayList<>();
+        return args.length == 4 ? CommandTabCompletes.getOnlinePlayers(plugin, args[2], false,
+                superiorPlayer -> superiorPlayer.getIsland() == null) : new ArrayList<>();
     }
 
 }

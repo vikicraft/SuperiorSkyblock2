@@ -5,7 +5,7 @@ import com.bgsoftware.superiorskyblock.commands.IAdminPlayerCommand;
 import com.bgsoftware.superiorskyblock.Locale;
 import com.bgsoftware.superiorskyblock.SuperiorSkyblockPlugin;
 
-import com.bgsoftware.superiorskyblock.utils.commands.CommandArguments;
+import com.bgsoftware.superiorskyblock.commands.CommandArguments;
 import org.bukkit.command.CommandSender;
 
 import java.util.Collections;
@@ -57,7 +57,7 @@ public final class CmdAdminMsg implements IAdminPlayerCommand {
 
     @Override
     public void execute(SuperiorSkyblockPlugin plugin, CommandSender sender, SuperiorPlayer targetPlayer, String[] args) {
-        if(!targetPlayer.asOfflinePlayer().isOnline()){
+        if(!targetPlayer.isOnline()){
             Locale.PLAYER_NOT_ONLINE.send(sender);
             return;
         }

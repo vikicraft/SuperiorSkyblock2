@@ -66,10 +66,10 @@ public final class NMSTagsImpl implements NMSTags {
         CraftWorld craftWorld = (CraftWorld) location.getWorld();
         NBTTagCompound nbtTagCompound = (NBTTagCompound) compoundTag.toNBT();
 
-        if(nbtTagCompound == null)
+        if (nbtTagCompound == null)
             nbtTagCompound = new NBTTagCompound();
 
-        if(!nbtTagCompound.hasKey("id"))
+        if (!nbtTagCompound.hasKey("id"))
             //noinspection deprecation
             nbtTagCompound.setString("id", new MinecraftKey(entityType.getName()).getKey());
 
@@ -138,10 +138,25 @@ public final class NMSTagsImpl implements NMSTags {
     public Object parseList(ListTag listTag) {
         NBTTagList nbtTagList = new NBTTagList();
 
-        for(Tag tag : listTag.getValue())
+        for (Tag tag : listTag.getValue())
             nbtTagList.add((NBTBase) tag.toNBT());
 
         return nbtTagList;
+    }
+
+    @Override
+    public Object getNBTCompoundTag(Object object, String key) {
+        return ((NBTTagCompound) object).get(key);
+    }
+
+    @Override
+    public void setNBTCompoundTagValue(Object object, String key, Object value) {
+        ((NBTTagCompound) object).set(key, (NBTBase) value);
+    }
+
+    @Override
+    public int getNBTTagListSize(Object object) {
+        return ((NBTTagList) object).size();
     }
 
 }

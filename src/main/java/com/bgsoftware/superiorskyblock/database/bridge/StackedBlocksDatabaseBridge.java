@@ -3,7 +3,7 @@ package com.bgsoftware.superiorskyblock.database.bridge;
 import com.bgsoftware.superiorskyblock.api.data.DatabaseFilter;
 import com.bgsoftware.superiorskyblock.api.handlers.StackedBlocksManager;
 import com.bgsoftware.superiorskyblock.api.objects.Pair;
-import com.bgsoftware.superiorskyblock.world.blocks.StackedBlock;
+import com.bgsoftware.superiorskyblock.world.blocks.stacked.StackedBlock;
 import com.bgsoftware.superiorskyblock.wrappers.SBlockPosition;
 
 import java.util.Arrays;
@@ -29,7 +29,7 @@ public final class StackedBlocksDatabaseBridge {
         stackedBlocks.getDatabaseBridge().deleteObject("stacked_blocks", null);
     }
 
-    private static DatabaseFilter createFilter(Pair<String, Object>... others){
+    private static DatabaseFilter createFilter(Pair<String, Object>... others) {
         return new DatabaseFilter(Arrays.asList(others));
     }
 

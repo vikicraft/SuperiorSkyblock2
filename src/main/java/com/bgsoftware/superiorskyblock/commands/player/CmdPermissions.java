@@ -1,15 +1,15 @@
 package com.bgsoftware.superiorskyblock.commands.player;
 
-import com.bgsoftware.superiorskyblock.Locale;
+import com.bgsoftware.superiorskyblock.lang.Message;
 import com.bgsoftware.superiorskyblock.SuperiorSkyblockPlugin;
 import com.bgsoftware.superiorskyblock.api.island.Island;
 import com.bgsoftware.superiorskyblock.api.island.IslandPrivilege;
 import com.bgsoftware.superiorskyblock.api.island.PlayerRole;
 import com.bgsoftware.superiorskyblock.api.wrappers.SuperiorPlayer;
+import com.bgsoftware.superiorskyblock.commands.CommandTabCompletes;
 import com.bgsoftware.superiorskyblock.commands.IPermissibleCommand;
 import com.bgsoftware.superiorskyblock.island.SPlayerRole;
-import com.bgsoftware.superiorskyblock.commands.CommandTabCompletes;
-import com.bgsoftware.superiorskyblock.utils.islands.IslandPrivileges;
+import com.bgsoftware.superiorskyblock.island.permissions.IslandPrivileges;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -29,12 +29,12 @@ public final class CmdPermissions implements IPermissibleCommand {
 
     @Override
     public String getUsage(java.util.Locale locale) {
-        return "permissions [" + Locale.COMMAND_ARGUMENT_PLAYER_NAME.getMessage(locale) + "] [reset]";
+        return "permissions [" + Message.COMMAND_ARGUMENT_PLAYER_NAME.getMessage(locale) + "] [reset]";
     }
 
     @Override
     public String getDescription(java.util.Locale locale) {
-        return Locale.COMMAND_DESCRIPTION_PERMISSIONS.getMessage(locale);
+        return Message.COMMAND_DESCRIPTION_PERMISSIONS.getMessage(locale);
     }
 
     @Override
@@ -58,8 +58,8 @@ public final class CmdPermissions implements IPermissibleCommand {
     }
 
     @Override
-    public Locale getPermissionLackMessage() {
-        return Locale.NO_PERMISSION_CHECK_PERMISSION;
+    public Message getPermissionLackMessage() {
+        return Message.NO_PERMISSION_CHECK_PERMISSION;
     }
 
     @Override
@@ -68,38 +68,35 @@ public final class CmdPermissions implements IPermissibleCommand {
 
         boolean setToDefault = (args.length == 2 ? args[1] : args.length == 3 ? args[2] : "").equalsIgnoreCase("reset");
 
-        if((!setToDefault && args.length == 2) || args.length == 3){
+        if ((!setToDefault && args.length == 2) || args.length == 3) {
             SuperiorPlayer targetPlayer = plugin.getPlayers().getSuperiorPlayer(args[1]);
 
-            if(targetPlayer == null){
-                Locale.INVALID_PLAYER.send(superiorPlayer, args[1]);
+            if (targetPlayer == null) {
+                Message.INVALID_PLAYER.send(superiorPlayer, args[1]);
                 return;
             }
 
-            if(island.isMember(targetPlayer) && !superiorPlayer.getPlayerRole().isHigherThan(targetPlayer.getPlayerRole())){
-                Locale.CHANGE_PERMISSION_FOR_HIGHER_ROLE.send(superiorPlayer);
+            if (island.isMember(targetPlayer) && !superiorPlayer.getPlayerRole().isHigherThan(targetPlayer.getPlayerRole())) {
+                Message.CHANGE_PERMISSION_FOR_HIGHER_ROLE.send(superiorPlayer);
                 return;
             }
 
             permissionHolder = targetPlayer;
         }
 
-        if(!setToDefault){
+        if (!setToDefault) {
             if (permissionHolder instanceof PlayerRole) {
                 plugin.getMenus().openPermissions(superiorPlayer, null, island, (PlayerRole) permissionHolder);
             } else {
                 plugin.getMenus().openPermissions(superiorPlayer, null, island, (SuperiorPlayer) permissionHolder);
             }
-        }
-
-        else{
-            if(permissionHolder instanceof PlayerRole) {
+        } else {
+            if (permissionHolder instanceof PlayerRole) {
                 island.resetPermissions();
-                Locale.PERMISSIONS_RESET_ROLES.send(superiorPlayer);
-            }
-            else {
+                Message.PERMISSIONS_RESET_ROLES.send(superiorPlayer);
+            } else {
                 island.resetPermissions((SuperiorPlayer) permissionHolder);
-                Locale.PERMISSIONS_RESET_PLAYER.send(superiorPlayer, ((SuperiorPlayer) permissionHolder).getName());
+                Message.PERMISSIONS_RESET_PLAYER.send(superiorPlayer, ((SuperiorPlayer) permissionHolder).getName());
             }
         }
     }
@@ -108,9 +105,9 @@ public final class CmdPermissions implements IPermissibleCommand {
     public List<String> tabComplete(SuperiorSkyblockPlugin plugin, SuperiorPlayer superiorPlayer, Island island, String[] args) {
         List<String> tabVariables = new ArrayList<>();
 
-        switch (args.length){
+        switch (args.length) {
             case 2:
-                if("reset".contains(args[1].toLowerCase()))
+                if ("reset".contains(args[1].toLowerCase()))
                     tabVariables.add("reset");
                 tabVariables.addAll(CommandTabCompletes.getOnlinePlayers(plugin, args[1],
                         plugin.getSettings().isTabCompleteHideVanished()));
@@ -119,14 +116,13 @@ public final class CmdPermissions implements IPermissibleCommand {
                 break;
         }
 
-        if(args.length == 2){
-            if("reset".contains(args[1].toLowerCase()))
+        if (args.length == 2) {
+            if ("reset".contains(args[1].toLowerCase()))
                 tabVariables.add("reset");
             tabVariables.addAll(CommandTabCompletes.getOnlinePlayers(plugin, args[1],
                     plugin.getSettings().isTabCompleteHideVanished()));
-        }
-        else if(args.length == 3){
-            if("reset".contains(args[2].toLowerCase()))
+        } else if (args.length == 3) {
+            if ("reset".contains(args[2].toLowerCase()))
                 tabVariables.add("reset");
         }
 

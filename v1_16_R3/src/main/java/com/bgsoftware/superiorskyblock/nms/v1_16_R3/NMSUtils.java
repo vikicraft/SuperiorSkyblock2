@@ -9,7 +9,8 @@ import com.bgsoftware.superiorskyblock.tag.CompoundTag;
 import com.bgsoftware.superiorskyblock.tag.IntArrayTag;
 import com.bgsoftware.superiorskyblock.tag.StringTag;
 import com.bgsoftware.superiorskyblock.tag.Tag;
-import com.bgsoftware.superiorskyblock.utils.threads.Executor;
+import com.bgsoftware.superiorskyblock.threads.Executor;
+import com.bgsoftware.superiorskyblock.utils.debug.PluginDebugger;
 import com.google.common.base.Suppliers;
 import net.minecraft.server.v1_16_R3.Block;
 import net.minecraft.server.v1_16_R3.BlockBed;
@@ -117,6 +118,7 @@ public final class NMSUtils {
                     }
                 } catch (Exception ex) {
                     ex.printStackTrace();
+                    PluginDebugger.debug(ex);
                 }
             });
         }).runSync(v -> {

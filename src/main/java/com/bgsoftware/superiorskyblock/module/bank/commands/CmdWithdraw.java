@@ -1,14 +1,14 @@
 package com.bgsoftware.superiorskyblock.module.bank.commands;
 
+import com.bgsoftware.superiorskyblock.lang.Message;
 import com.bgsoftware.superiorskyblock.SuperiorSkyblockPlugin;
 import com.bgsoftware.superiorskyblock.api.island.Island;
 import com.bgsoftware.superiorskyblock.api.island.bank.BankTransaction;
 import com.bgsoftware.superiorskyblock.api.objects.Pair;
 import com.bgsoftware.superiorskyblock.api.wrappers.SuperiorPlayer;
+import com.bgsoftware.superiorskyblock.commands.CommandArguments;
 import com.bgsoftware.superiorskyblock.commands.ISuperiorCommand;
 import com.bgsoftware.superiorskyblock.menu.impl.MenuIslandBank;
-import com.bgsoftware.superiorskyblock.commands.CommandArguments;
-import com.bgsoftware.superiorskyblock.Locale;
 import org.bukkit.command.CommandSender;
 
 import java.math.BigDecimal;
@@ -30,12 +30,12 @@ public final class CmdWithdraw implements ISuperiorCommand {
 
     @Override
     public String getUsage(java.util.Locale locale) {
-        return "withdraw <" + Locale.COMMAND_ARGUMENT_AMOUNT.getMessage(locale) + ">";
+        return "withdraw <" + Message.COMMAND_ARGUMENT_AMOUNT.getMessage(locale) + ">";
     }
 
     @Override
     public String getDescription(java.util.Locale locale) {
-        return Locale.COMMAND_DESCRIPTION_WITHDRAW.getMessage(locale);
+        return Message.COMMAND_DESCRIPTION_WITHDRAW.getMessage(locale);
     }
 
     @Override
@@ -59,20 +59,19 @@ public final class CmdWithdraw implements ISuperiorCommand {
 
         Island island = arguments.getKey();
 
-        if(island == null)
+        if (island == null)
             return;
 
         SuperiorPlayer superiorPlayer = arguments.getValue();
 
         BigDecimal amount = BigDecimal.valueOf(-1);
 
-        if(args[1].equalsIgnoreCase("all") || args[1].equals("*")){
+        if (args[1].equalsIgnoreCase("all") || args[1].equals("*")) {
             amount = island.getIslandBank().getBalance();
-        }
-
-        else try{
+        } else try {
             amount = new BigDecimal(args[1]);
-        }catch(IllegalArgumentException ignored){}
+        } catch (IllegalArgumentException ignored) {
+        }
 
         BankTransaction transaction = island.getIslandBank().withdrawMoney(superiorPlayer, amount, null);
         MenuIslandBank.handleWithdraw(superiorPlayer, island, null, transaction, -1, amount);

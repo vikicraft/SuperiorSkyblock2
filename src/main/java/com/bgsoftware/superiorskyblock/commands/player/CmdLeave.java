@@ -1,12 +1,12 @@
 package com.bgsoftware.superiorskyblock.commands.player;
 
-import com.bgsoftware.superiorskyblock.Locale;
+import com.bgsoftware.superiorskyblock.lang.Message;
 import com.bgsoftware.superiorskyblock.SuperiorSkyblockPlugin;
 import com.bgsoftware.superiorskyblock.api.island.Island;
 import com.bgsoftware.superiorskyblock.api.objects.Pair;
 import com.bgsoftware.superiorskyblock.api.wrappers.SuperiorPlayer;
-import com.bgsoftware.superiorskyblock.commands.ISuperiorCommand;
 import com.bgsoftware.superiorskyblock.commands.CommandArguments;
+import com.bgsoftware.superiorskyblock.commands.ISuperiorCommand;
 import com.bgsoftware.superiorskyblock.utils.events.EventsCaller;
 import com.bgsoftware.superiorskyblock.utils.islands.IslandUtils;
 import org.bukkit.command.CommandSender;
@@ -34,7 +34,7 @@ public final class CmdLeave implements ISuperiorCommand {
 
     @Override
     public String getDescription(java.util.Locale locale) {
-        return Locale.COMMAND_DESCRIPTION_LEAVE.getMessage(locale);
+        return Message.COMMAND_DESCRIPTION_LEAVE.getMessage(locale);
     }
 
     @Override
@@ -58,13 +58,13 @@ public final class CmdLeave implements ISuperiorCommand {
 
         Island island = arguments.getKey();
 
-        if(island == null)
+        if (island == null)
             return;
 
         SuperiorPlayer superiorPlayer = arguments.getValue();
 
-        if(superiorPlayer.getPlayerRole().getNextRole() == null){
-            Locale.LEAVE_ISLAND_AS_LEADER.send(superiorPlayer);
+        if (superiorPlayer.getPlayerRole().getNextRole() == null) {
+            Message.LEAVE_ISLAND_AS_LEADER.send(superiorPlayer);
             return;
         }
 
@@ -73,14 +73,14 @@ public final class CmdLeave implements ISuperiorCommand {
             return;
         }
 
-        if(!EventsCaller.callIslandQuitEvent(superiorPlayer, island))
+        if (!EventsCaller.callIslandQuitEvent(superiorPlayer, island))
             return;
 
         island.kickMember(superiorPlayer);
 
-        IslandUtils.sendMessage(island, Locale.LEAVE_ANNOUNCEMENT, new ArrayList<>(), superiorPlayer.getName());
+        IslandUtils.sendMessage(island, Message.LEAVE_ANNOUNCEMENT, new ArrayList<>(), superiorPlayer.getName());
 
-        Locale.LEFT_ISLAND.send(superiorPlayer);
+        Message.LEFT_ISLAND.send(superiorPlayer);
     }
 
     @Override

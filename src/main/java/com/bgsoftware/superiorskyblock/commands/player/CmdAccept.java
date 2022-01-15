@@ -1,14 +1,14 @@
 package com.bgsoftware.superiorskyblock.commands.player;
 
+import com.bgsoftware.superiorskyblock.lang.Message;
+import com.bgsoftware.superiorskyblock.SuperiorSkyblockPlugin;
 import com.bgsoftware.superiorskyblock.api.island.Island;
 import com.bgsoftware.superiorskyblock.api.wrappers.SuperiorPlayer;
+import com.bgsoftware.superiorskyblock.commands.CommandTabCompletes;
 import com.bgsoftware.superiorskyblock.commands.ISuperiorCommand;
 import com.bgsoftware.superiorskyblock.island.SPlayerRole;
-import com.bgsoftware.superiorskyblock.commands.CommandTabCompletes;
 import com.bgsoftware.superiorskyblock.utils.events.EventsCaller;
 import com.bgsoftware.superiorskyblock.utils.islands.IslandUtils;
-import com.bgsoftware.superiorskyblock.Locale;
-import com.bgsoftware.superiorskyblock.SuperiorSkyblockPlugin;
 import org.bukkit.command.CommandSender;
 
 import java.util.ArrayList;
@@ -30,13 +30,13 @@ public final class CmdAccept implements ISuperiorCommand {
     @Override
     public String getUsage(java.util.Locale locale) {
         return "accept <" +
-                Locale.COMMAND_ARGUMENT_PLAYER_NAME.getMessage(locale) + "/" +
-                Locale.COMMAND_ARGUMENT_ISLAND_NAME.getMessage(locale) + ">";
+                Message.COMMAND_ARGUMENT_PLAYER_NAME.getMessage(locale) + "/" +
+                Message.COMMAND_ARGUMENT_ISLAND_NAME.getMessage(locale) + ">";
     }
 
     @Override
     public String getDescription(java.util.Locale locale) {
-        return Locale.COMMAND_DESCRIPTION_ACCEPT.getMessage(locale);
+        return Message.COMMAND_DESCRIPTION_ACCEPT.getMessage(locale);
     }
 
     @Override
@@ -60,46 +60,45 @@ public final class CmdAccept implements ISuperiorCommand {
         SuperiorPlayer targetPlayer = plugin.getPlayers().getSuperiorPlayer(args[1]);
         Island island;
 
-        if(targetPlayer == null){
-            if((island = plugin.getGrid().getIsland(args[1])) == null || !island.isInvited(superiorPlayer)){
-                Locale.NO_ISLAND_INVITE.send(superiorPlayer);
+        if (targetPlayer == null) {
+            if ((island = plugin.getGrid().getIsland(args[1])) == null || !island.isInvited(superiorPlayer)) {
+                Message.NO_ISLAND_INVITE.send(superiorPlayer);
                 return;
             }
-        }
-        else{
-            if((island = plugin.getGrid().getIsland(targetPlayer)) == null || !island.isInvited(superiorPlayer)) {
-                Locale.NO_ISLAND_INVITE.send(superiorPlayer);
+        } else {
+            if ((island = plugin.getGrid().getIsland(targetPlayer)) == null || !island.isInvited(superiorPlayer)) {
+                Message.NO_ISLAND_INVITE.send(superiorPlayer);
                 return;
             }
         }
 
-        if(superiorPlayer.getIsland() != null){
-            Locale.JOIN_WHILE_IN_ISLAND.send(superiorPlayer);
+        if (superiorPlayer.getIsland() != null) {
+            Message.JOIN_WHILE_IN_ISLAND.send(superiorPlayer);
             return;
         }
 
-        if(island.getTeamLimit() >= 0 && island.getIslandMembers(true).size() >= island.getTeamLimit()){
-            Locale.JOIN_FULL_ISLAND.send(superiorPlayer);
+        if (island.getTeamLimit() >= 0 && island.getIslandMembers(true).size() >= island.getTeamLimit()) {
+            Message.JOIN_FULL_ISLAND.send(superiorPlayer);
             island.revokeInvite(superiorPlayer);
             return;
         }
 
-        if(!EventsCaller.callIslandJoinEvent(superiorPlayer, island))
+        if (!EventsCaller.callIslandJoinEvent(superiorPlayer, island))
             return;
 
-        IslandUtils.sendMessage(island, Locale.JOIN_ANNOUNCEMENT, new ArrayList<>(), superiorPlayer.getName());
+        IslandUtils.sendMessage(island, Message.JOIN_ANNOUNCEMENT, new ArrayList<>(), superiorPlayer.getName());
 
         island.revokeInvite(superiorPlayer);
         island.addMember(superiorPlayer, SPlayerRole.defaultRole());
 
-        if(targetPlayer == null)
-            Locale.JOINED_ISLAND_NAME.send(superiorPlayer, island.getName());
+        if (targetPlayer == null)
+            Message.JOINED_ISLAND_NAME.send(superiorPlayer, island.getName());
         else
-            Locale.JOINED_ISLAND.send(superiorPlayer, targetPlayer.getName());
+            Message.JOINED_ISLAND.send(superiorPlayer, targetPlayer.getName());
 
-        if(plugin.getSettings().isTeleportOnJoin())
+        if (plugin.getSettings().isTeleportOnJoin())
             superiorPlayer.teleport(island);
-        if(plugin.getSettings().isClearOnJoin())
+        if (plugin.getSettings().isClearOnJoin())
             plugin.getNMSPlayers().clearInventory(superiorPlayer.asPlayer());
     }
 

@@ -1,12 +1,14 @@
 package com.bgsoftware.superiorskyblock.database.sql;
 
 import com.bgsoftware.superiorskyblock.SuperiorSkyblockPlugin;
-import com.bgsoftware.superiorskyblock.utils.threads.Executor;
+import com.bgsoftware.superiorskyblock.threads.Executor;
+import com.bgsoftware.superiorskyblock.utils.debug.PluginDebugger;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 public final class StatementHolder {
 
@@ -20,7 +22,7 @@ public final class StatementHolder {
     private String query;
     private int currentIndex = 1;
 
-    public StatementHolder(String statement){
+    public StatementHolder(String statement) {
         setQuery(statement);
     }
 
@@ -28,22 +30,22 @@ public final class StatementHolder {
         this.query = query.replace("{prefix}", prefix);
     }
 
-    public void addBatch(){
+    public void addBatch() {
         batches.add(new HashMap<>(values));
         values.clear();
         currentIndex = 1;
     }
 
-    public StatementHolder setObject(Object value){
+    public StatementHolder setObject(Object value) {
         values.put(currentIndex++, value);
         return this;
     }
 
-    public void executeBatch(boolean async){
-        if(query == null || query.isEmpty() || batches.isEmpty())
+    public void executeBatch(boolean async) {
+        if (query == null || !SQLHelper.isReady() || query.isEmpty() || batches.isEmpty())
             return;
 
-        if(async && !Executor.isDataThread()){
+        if (async && !Executor.isDataThread()) {
             Executor.data(() -> executeBatch(false));
             return;
         }
@@ -53,8 +55,13 @@ public final class StatementHolder {
         try {
             StringHolder errorQuery = new StringHolder(query);
 
-            synchronized (SQLHelper.getMutex()) {
-                SuperiorSkyblockPlugin.debug("Action: Database Execute, Query: " + query);
+            Optional<Object> mutex = SQLHelper.getMutex();
+
+            if (!mutex.isPresent())
+                return;
+
+            synchronized (mutex.get()) {
+                PluginDebugger.debug("Action: Database Execute, Query: " + query);
                 SQLHelper.buildStatement(query, preparedStatement -> {
                     SQLHelper.setAutoCommit(false);
 
@@ -69,7 +76,8 @@ public final class StatementHolder {
                     preparedStatement.executeBatch();
                     try {
                         SQLHelper.commit();
-                    }catch(Throwable ignored){}
+                    } catch (Throwable ignored) {
+                    }
 
                     SQLHelper.setAutoCommit(true);
                 }, ex -> {
@@ -83,7 +91,10 @@ public final class StatementHolder {
     }
 
     public void execute(boolean async) {
-        if(async && !Executor.isDataThread()){
+        if (!SQLHelper.isReady())
+            return;
+
+        if (async && !Executor.isDataThread()) {
             Executor.data(() -> execute(false));
             return;
         }
@@ -93,8 +104,13 @@ public final class StatementHolder {
         try {
             StringHolder errorQuery = new StringHolder(query);
 
-            synchronized (SQLHelper.getMutex()) {
-                SuperiorSkyblockPlugin.debug("Action: Database Execute, Query: " + query);
+            Optional<Object> mutex = SQLHelper.getMutex();
+
+            if (!mutex.isPresent())
+                return;
+
+            synchronized (mutex.get()) {
+                PluginDebugger.debug("Action: Database Execute, Query: " + query);
                 SQLHelper.buildStatement(query, preparedStatement -> {
                     for (Map.Entry<Integer, Object> entry : values.entrySet()) {
                         preparedStatement.setObject(entry.getKey(), entry.getValue());
@@ -111,11 +127,11 @@ public final class StatementHolder {
         }
     }
 
-    private static class StringHolder{
+    private static class StringHolder {
 
         private String value;
 
-        StringHolder(String value){
+        StringHolder(String value) {
             this.value = value;
         }
 

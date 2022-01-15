@@ -2,6 +2,7 @@ package com.bgsoftware.superiorskyblock.utils.items;
 
 import com.bgsoftware.common.reflection.ReflectField;
 import com.bgsoftware.superiorskyblock.SuperiorSkyblockPlugin;
+import com.bgsoftware.superiorskyblock.utils.debug.PluginDebugger;
 import org.bukkit.enchantments.Enchantment;
 
 public final class EnchantsUtils {
@@ -11,16 +12,18 @@ public final class EnchantsUtils {
 
     private static Enchantment glowEnchant;
 
-    private EnchantsUtils(){
+    private EnchantsUtils() {
 
     }
 
-    public static void registerGlowEnchantment(){
+    public static void registerGlowEnchantment() {
         glowEnchant = plugin.getNMSAlgorithms().getGlowEnchant();
         ACCEPTING_NEW.set(null, true);
-        try{
+        try {
             Enchantment.registerEnchantment(glowEnchant);
-        }catch(Exception ignored){}
+        } catch (Exception error) {
+            PluginDebugger.debug(error);
+        }
     }
 
     public static Enchantment getGlowEnchant() {

@@ -41,10 +41,6 @@ public final class PlayersHandler extends AbstractHandler implements PlayersMana
         return this.playersContainer.getSuperiorPlayer(name);
     }
 
-    public SuperiorPlayer getSuperiorPlayer(CommandSender commandSender) {
-        return getSuperiorPlayer((Player) commandSender);
-    }
-
     @Override
     public SuperiorPlayer getSuperiorPlayer(Player player) {
         Preconditions.checkNotNull(player, "player parameter cannot be null.");
@@ -63,13 +59,6 @@ public final class PlayersHandler extends AbstractHandler implements PlayersMana
         }
 
         return superiorPlayer;
-    }
-
-    public List<SuperiorPlayer> matchAllPlayers(Predicate<? super SuperiorPlayer> predicate) {
-        return Collections.unmodifiableList(this.playersContainer.getAllPlayers().stream()
-                .filter(predicate)
-                .collect(Collectors.toList())
-        );
     }
 
     @Override
@@ -125,6 +114,17 @@ public final class PlayersHandler extends AbstractHandler implements PlayersMana
         return plugin.getRoles().getRoles();
     }
 
+    public SuperiorPlayer getSuperiorPlayer(CommandSender commandSender) {
+        return getSuperiorPlayer((Player) commandSender);
+    }
+
+    public List<SuperiorPlayer> matchAllPlayers(Predicate<? super SuperiorPlayer> predicate) {
+        return Collections.unmodifiableList(this.playersContainer.getAllPlayers().stream()
+                .filter(predicate)
+                .collect(Collectors.toList())
+        );
+    }
+
     public void loadPlayer(DatabaseResult resultSet) {
         SuperiorPlayer superiorPlayer = plugin.getFactory().createPlayer(resultSet);
         this.playersContainer.addPlayer(superiorPlayer);
@@ -133,10 +133,10 @@ public final class PlayersHandler extends AbstractHandler implements PlayersMana
     public void replacePlayers(SuperiorPlayer originPlayer, SuperiorPlayer newPlayer) {
         this.playersContainer.removePlayer(originPlayer);
 
+        newPlayer.merge(originPlayer);
+
         for (Island island : plugin.getGrid().getIslands())
             island.replacePlayers(originPlayer, newPlayer);
-
-        newPlayer.merge(originPlayer);
     }
 
     // Updating last time status

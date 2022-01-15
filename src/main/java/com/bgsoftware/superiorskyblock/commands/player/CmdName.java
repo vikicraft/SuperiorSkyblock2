@@ -1,13 +1,13 @@
 package com.bgsoftware.superiorskyblock.commands.player;
 
+import com.bgsoftware.superiorskyblock.lang.Message;
 import com.bgsoftware.superiorskyblock.SuperiorSkyblockPlugin;
 import com.bgsoftware.superiorskyblock.api.island.Island;
 import com.bgsoftware.superiorskyblock.api.island.IslandPrivilege;
 import com.bgsoftware.superiorskyblock.api.wrappers.SuperiorPlayer;
 import com.bgsoftware.superiorskyblock.commands.IPermissibleCommand;
 import com.bgsoftware.superiorskyblock.utils.StringUtils;
-import com.bgsoftware.superiorskyblock.utils.islands.IslandPrivileges;
-import com.bgsoftware.superiorskyblock.Locale;
+import com.bgsoftware.superiorskyblock.island.permissions.IslandPrivileges;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
@@ -28,12 +28,12 @@ public final class CmdName implements IPermissibleCommand {
 
     @Override
     public String getUsage(java.util.Locale locale) {
-        return "name <" + Locale.COMMAND_ARGUMENT_ISLAND_NAME.getMessage(locale) + ">";
+        return "name <" + Message.COMMAND_ARGUMENT_ISLAND_NAME.getMessage(locale) + ">";
     }
 
     @Override
     public String getDescription(java.util.Locale locale) {
-        return Locale.COMMAND_DESCRIPTION_NAME.getMessage(locale);
+        return Message.COMMAND_DESCRIPTION_NAME.getMessage(locale);
     }
 
     @Override
@@ -57,15 +57,15 @@ public final class CmdName implements IPermissibleCommand {
     }
 
     @Override
-    public Locale getPermissionLackMessage() {
-        return Locale.NO_NAME_PERMISSION;
+    public Message getPermissionLackMessage() {
+        return Message.NO_NAME_PERMISSION;
     }
 
     @Override
     public void execute(SuperiorSkyblockPlugin plugin, SuperiorPlayer superiorPlayer, Island island, String[] args) {
         String islandName = args[1];
 
-        if(!StringUtils.isValidName(superiorPlayer, island, islandName))
+        if (!StringUtils.isValidName(superiorPlayer, island, islandName))
             return;
 
         island.setName(islandName);
@@ -73,10 +73,10 @@ public final class CmdName implements IPermissibleCommand {
         String coloredName = plugin.getSettings().getIslandNames().isColorSupport() ?
                 StringUtils.translateColors(islandName) : islandName;
 
-        for(Player player : Bukkit.getOnlinePlayers())
-            Locale.NAME_ANNOUNCEMENT.send(player, superiorPlayer.getName(), coloredName);
+        for (Player player : Bukkit.getOnlinePlayers())
+            Message.NAME_ANNOUNCEMENT.send(player, superiorPlayer.getName(), coloredName);
 
-        Locale.CHANGED_NAME.send(superiorPlayer, coloredName);
+        Message.CHANGED_NAME.send(superiorPlayer, coloredName);
     }
 
 }

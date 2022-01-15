@@ -10,13 +10,13 @@ public final class VaultUpgradeCost extends UpgradeCostAbstract {
 
     private static final SuperiorSkyblockPlugin plugin = SuperiorSkyblockPlugin.getPlugin();
 
-    public VaultUpgradeCost(BigDecimal value){
+    public VaultUpgradeCost(BigDecimal value) {
         super(value, "money");
     }
 
     @Override
     public boolean hasEnoughBalance(SuperiorPlayer superiorPlayer) {
-        return plugin.getProviders().getBalance(superiorPlayer).compareTo(cost) >= 0;
+        return plugin.getProviders().getEconomyProvider().getBalance(superiorPlayer).compareTo(cost) >= 0;
     }
 
     @Override

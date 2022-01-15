@@ -1,13 +1,13 @@
 package com.bgsoftware.superiorskyblock.commands.admin;
 
-import com.bgsoftware.superiorskyblock.Locale;
+import com.bgsoftware.superiorskyblock.lang.Message;
 import com.bgsoftware.superiorskyblock.SuperiorSkyblockPlugin;
 import com.bgsoftware.superiorskyblock.api.island.Island;
 import com.bgsoftware.superiorskyblock.api.wrappers.SuperiorPlayer;
-import com.bgsoftware.superiorskyblock.commands.IAdminIslandCommand;
-import com.bgsoftware.superiorskyblock.utils.StringUtils;
 import com.bgsoftware.superiorskyblock.commands.CommandArguments;
 import com.bgsoftware.superiorskyblock.commands.CommandTabCompletes;
+import com.bgsoftware.superiorskyblock.commands.IAdminIslandCommand;
+import com.bgsoftware.superiorskyblock.utils.StringUtils;
 import org.bukkit.World;
 import org.bukkit.command.CommandSender;
 
@@ -30,14 +30,14 @@ public final class CmdAdminUnlockWorld implements IAdminIslandCommand {
     @Override
     public String getUsage(java.util.Locale locale) {
         return "admin unlockworld <" +
-                Locale.COMMAND_ARGUMENT_PLAYER_NAME.getMessage(locale) + "/" +
-                Locale.COMMAND_ARGUMENT_ISLAND_NAME.getMessage(locale) + "/" +
-                Locale.COMMAND_ARGUMENT_ALL_ISLANDS.getMessage(locale) + "> <nether/the_end/normal> <true/false>";
+                Message.COMMAND_ARGUMENT_PLAYER_NAME.getMessage(locale) + "/" +
+                Message.COMMAND_ARGUMENT_ISLAND_NAME.getMessage(locale) + "/" +
+                Message.COMMAND_ARGUMENT_ALL_ISLANDS.getMessage(locale) + "> <nether/the_end/normal> <true/false>";
     }
 
     @Override
     public String getDescription(java.util.Locale locale) {
-        return Locale.COMMAND_DESCRIPTION_ADMIN_UNLOCK_WORLD.getMessage(locale);
+        return Message.COMMAND_DESCRIPTION_ADMIN_UNLOCK_WORLD.getMessage(locale);
     }
 
     @Override
@@ -64,18 +64,18 @@ public final class CmdAdminUnlockWorld implements IAdminIslandCommand {
     public void execute(SuperiorSkyblockPlugin plugin, CommandSender sender, SuperiorPlayer targetPlayer, List<Island> islands, String[] args) {
         World.Environment environment = CommandArguments.getEnvironment(sender, args[3]);
 
-        if(environment == null)
+        if (environment == null)
             return;
 
-        if(environment == plugin.getSettings().getWorlds().getDefaultWorld()){
-            Locale.INVALID_ENVIRONMENT.send(sender, args[3]);
+        if (environment == plugin.getSettings().getWorlds().getDefaultWorld()) {
+            Message.INVALID_ENVIRONMENT.send(sender, args[3]);
             return;
         }
 
         boolean enable = Boolean.parseBoolean(args[4]);
 
         islands.forEach(island -> {
-            switch (environment){
+            switch (environment) {
                 case NORMAL:
                     island.setNormalEnabled(enable);
                     break;
@@ -88,19 +88,19 @@ public final class CmdAdminUnlockWorld implements IAdminIslandCommand {
             }
         });
 
-        Locale.UNLOCK_WORLD_ANNOUNCEMENT.send(sender, StringUtils.format(args[3]));
+        Message.UNLOCK_WORLD_ANNOUNCEMENT.send(sender, StringUtils.format(args[3]));
     }
 
     @Override
     public List<String> adminTabComplete(SuperiorSkyblockPlugin plugin, CommandSender sender, Island island, String[] args) {
-        if(args.length == 5)
+        if (args.length == 5)
             return CommandTabCompletes.getCustomComplete(args[3], "true", "false");
 
-        if(args.length != 4)
+        if (args.length != 4)
             return new ArrayList<>();
 
         List<String> environments = new ArrayList<>();
-        for(World.Environment environment : World.Environment.values()){
+        for (World.Environment environment : World.Environment.values()) {
             environments.add(environment.name().toLowerCase());
         }
 

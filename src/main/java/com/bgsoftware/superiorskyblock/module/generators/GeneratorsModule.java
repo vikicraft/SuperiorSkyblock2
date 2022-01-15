@@ -8,6 +8,7 @@ import com.bgsoftware.superiorskyblock.module.generators.commands.CmdAdminAddGen
 import com.bgsoftware.superiorskyblock.module.generators.commands.CmdAdminClearGenerator;
 import com.bgsoftware.superiorskyblock.module.generators.commands.CmdAdminSetGenerator;
 import com.bgsoftware.superiorskyblock.module.generators.listeners.GeneratorsListener;
+import com.bgsoftware.superiorskyblock.utils.debug.PluginDebugger;
 import org.bukkit.event.Listener;
 
 import java.io.File;
@@ -16,8 +17,32 @@ public final class GeneratorsModule extends BuiltinModule {
 
     private boolean enabled = true;
 
-    public GeneratorsModule(){
+    public GeneratorsModule() {
         super("generators");
+    }
+
+    @Override
+    protected void onPluginInit(SuperiorSkyblockPlugin plugin) {
+        super.onPluginInit(plugin);
+
+        File configFile = new File(plugin.getDataFolder(), "config.yml");
+        CommentedConfiguration config = CommentedConfiguration.loadConfiguration(configFile);
+
+        if (config.contains("generators")) {
+            super.config.set("enabled", config.getBoolean("generators"));
+            config.set("generators", null);
+
+            File moduleConfigFile = new File(getDataFolder(), "config.yml");
+
+            try {
+                super.config.save(moduleConfigFile);
+                config.save(configFile);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                PluginDebugger.debug(ex);
+            }
+        }
+
     }
 
     @Override
@@ -30,7 +55,7 @@ public final class GeneratorsModule extends BuiltinModule {
 
     @Override
     public Listener[] getModuleListeners(SuperiorSkyblockPlugin plugin) {
-        return !enabled ? null : new Listener[] {new GeneratorsListener(plugin, this)};
+        return !enabled ? null : new Listener[]{new GeneratorsListener(plugin, this)};
     }
 
     @Override
@@ -44,35 +69,12 @@ public final class GeneratorsModule extends BuiltinModule {
     }
 
     @Override
-    protected void onPluginInit(SuperiorSkyblockPlugin plugin) {
-        super.onPluginInit(plugin);
-
-        File configFile = new File(plugin.getDataFolder(), "config.yml");
-        CommentedConfiguration config = CommentedConfiguration.loadConfiguration(configFile);
-
-        if(config.contains("generators")){
-            super.config.set("enabled", config.getBoolean("generators"));
-            config.set("generators", null);
-
-            File moduleConfigFile = new File(getDataFolder(), "config.yml");
-
-            try{
-                super.config.save(moduleConfigFile);
-                config.save(configFile);
-            }catch (Exception ex){
-                ex.printStackTrace();
-            }
-        }
-
-    }
-
-    @Override
     public boolean isEnabled() {
         return enabled && isInitialized();
     }
 
     @Override
-    protected void updateConfig(SuperiorSkyblockPlugin plugin){
+    protected void updateConfig(SuperiorSkyblockPlugin plugin) {
         enabled = config.getBoolean("enabled");
     }
 

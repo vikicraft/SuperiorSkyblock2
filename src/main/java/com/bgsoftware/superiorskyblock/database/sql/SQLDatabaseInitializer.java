@@ -3,6 +3,7 @@ package com.bgsoftware.superiorskyblock.database.sql;
 import com.bgsoftware.superiorskyblock.SuperiorSkyblockPlugin;
 import com.bgsoftware.superiorskyblock.database.bridge.GridDatabaseBridge;
 import com.bgsoftware.superiorskyblock.handler.HandlerLoadException;
+import com.bgsoftware.superiorskyblock.utils.debug.PluginDebugger;
 
 import java.io.File;
 import java.sql.PreparedStatement;
@@ -12,17 +13,16 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public final class SQLDatabaseInitializer {
 
     private static final SQLDatabaseInitializer instance = new SQLDatabaseInitializer();
-
-    public static SQLDatabaseInitializer getInstance() {
-        return instance;
-    }
+    private DatabaseType database = DatabaseType.SQLite;
+    private SuperiorSkyblockPlugin plugin;
 
     private SQLDatabaseInitializer() {
 
     }
 
-    private DatabaseType database = DatabaseType.SQLite;
-    private SuperiorSkyblockPlugin plugin;
+    public static SQLDatabaseInitializer getInstance() {
+        return instance;
+    }
 
     public void init(SuperiorSkyblockPlugin plugin) throws HandlerLoadException {
         this.plugin = plugin;
@@ -47,66 +47,86 @@ public final class SQLDatabaseInitializer {
             GridDatabaseBridge.insertGrid(plugin.getGrid());
     }
 
-    public void createIndexes(){
+    public void createIndexes() {
         SQLHelper.executeUpdate("CREATE UNIQUE INDEX islands_bans_index ON " +
-                "{prefix}islands_bans (island,player);", ignoreError -> {});
+                "{prefix}islands_bans (island,player);", ignoreError -> {
+        });
 
         SQLHelper.executeUpdate("CREATE UNIQUE INDEX block_limits_index ON " +
-                "{prefix}islands_block_limits (island,block);", ignoreError -> {});
+                "{prefix}islands_block_limits (island,block);", ignoreError -> {
+        });
 
         SQLHelper.executeUpdate("CREATE UNIQUE INDEX islands_chests_index ON " +
-                "{prefix}islands_chests (island,`index`);", ignoreError -> {});
+                "{prefix}islands_chests (island,`index`);", ignoreError -> {
+        });
 
         SQLHelper.executeUpdate("CREATE UNIQUE INDEX islands_effects_index ON " +
-                "{prefix}islands_effects (island,effect_type);", ignoreError -> {});
+                "{prefix}islands_effects (island,effect_type);", ignoreError -> {
+        });
 
         SQLHelper.executeUpdate("CREATE UNIQUE INDEX entity_limits_index ON " +
-                "{prefix}islands_entity_limits (island,entity);", ignoreError -> {});
+                "{prefix}islands_entity_limits (island,entity);", ignoreError -> {
+        });
 
         SQLHelper.executeUpdate("CREATE UNIQUE INDEX islands_flags_index ON " +
-                "{prefix}islands_flags (island,name);", ignoreError -> {});
+                "{prefix}islands_flags (island,name);", ignoreError -> {
+        });
 
         SQLHelper.executeUpdate("CREATE UNIQUE INDEX islands_generators_index ON " +
-                "{prefix}islands_generators (island,environment,block);", ignoreError -> {});
+                "{prefix}islands_generators (island,environment,block);", ignoreError -> {
+        });
 
         SQLHelper.executeUpdate("CREATE UNIQUE INDEX islands_homes_index ON " +
-                "{prefix}islands_homes (island,environment);", ignoreError -> {});
+                "{prefix}islands_homes (island,environment);", ignoreError -> {
+        });
 
         SQLHelper.executeUpdate("CREATE UNIQUE INDEX islands_members_index ON " +
-                "{prefix}islands_members (island,player);", ignoreError -> {});
+                "{prefix}islands_members (island,player);", ignoreError -> {
+        });
 
         SQLHelper.executeUpdate("CREATE UNIQUE INDEX islands_missions_index ON " +
-                "{prefix}islands_missions (island,name);", ignoreError -> {});
+                "{prefix}islands_missions (island,name);", ignoreError -> {
+        });
 
         SQLHelper.executeUpdate("CREATE UNIQUE INDEX player_permissions_index ON " +
-                "{prefix}islands_player_permissions (island,player,permission);", ignoreError -> {});
+                "{prefix}islands_player_permissions (island,player,permission);", ignoreError -> {
+        });
 
         SQLHelper.executeUpdate("CREATE UNIQUE INDEX islands_ratings_index ON " +
-                "{prefix}islands_ratings (island,player);", ignoreError -> {});
+                "{prefix}islands_ratings (island,player);", ignoreError -> {
+        });
 
         SQLHelper.executeUpdate("CREATE UNIQUE INDEX role_limits_index ON " +
-                "{prefix}islands_role_limits (island,role);", ignoreError -> {});
+                "{prefix}islands_role_limits (island,role);", ignoreError -> {
+        });
 
         SQLHelper.executeUpdate("CREATE UNIQUE INDEX role_permissions_index ON " +
-                "{prefix}islands_role_permissions (island,permission);", ignoreError -> {});
+                "{prefix}islands_role_permissions (island,permission);", ignoreError -> {
+        });
 
         SQLHelper.executeUpdate("CREATE UNIQUE INDEX islands_upgrades_index ON " +
-                "{prefix}islands_upgrades (island,upgrade);", ignoreError -> {});
+                "{prefix}islands_upgrades (island,upgrade);", ignoreError -> {
+        });
 
         SQLHelper.executeUpdate("CREATE UNIQUE INDEX visitor_homes_index ON " +
-                "{prefix}islands_visitor_homes (island,environment);", ignoreError -> {});
+                "{prefix}islands_visitor_homes (island,environment);", ignoreError -> {
+        });
 
         SQLHelper.executeUpdate("CREATE UNIQUE INDEX islands_visitors_index ON " +
-                "{prefix}islands_visitors (island,player);", ignoreError -> {});
+                "{prefix}islands_visitors (island,player);", ignoreError -> {
+        });
 
         SQLHelper.executeUpdate("CREATE UNIQUE INDEX warp_categories_index ON " +
-                "{prefix}islands_warp_categories (island,name);", ignoreError -> {});
+                "{prefix}islands_warp_categories (island,name);", ignoreError -> {
+        });
 
         SQLHelper.executeUpdate("CREATE UNIQUE INDEX islands_warps_index ON " +
-                "{prefix}islands_warps (island,name);", ignoreError -> {});
+                "{prefix}islands_warps (island,name);", ignoreError -> {
+        });
 
         SQLHelper.executeUpdate("CREATE UNIQUE INDEX players_missions_index ON " +
-                "{prefix}players_missions (player,name);", ignoreError -> {});
+                "{prefix}players_missions (player,name);", ignoreError -> {
+        });
     }
 
     public void close() {
@@ -215,9 +235,13 @@ public final class SQLDatabaseInitializer {
 
         SQLHelper.executeUpdate("CREATE TABLE IF NOT EXISTS {prefix}islands_missions (" +
                 "island UUID, " +
-                "name UNIQUE_TEXT, " +
+                "name LONG_UNIQUE_TEXT, " +
                 "finish_count INTEGER" +
                 ");");
+
+        SQLHelper.executeUpdate("ALTER TABLE {prefix}islands_missions MODIFY COLUMN name LONG_UNIQUE_TEXT",
+                error -> {
+                });
 
         SQLHelper.executeUpdate("CREATE TABLE IF NOT EXISTS {prefix}islands_player_permissions (" +
                 "island UUID, " +
@@ -259,9 +283,13 @@ public final class SQLDatabaseInitializer {
 
         SQLHelper.executeUpdate("CREATE TABLE IF NOT EXISTS {prefix}islands_upgrades (" +
                 "island UUID, " +
-                "upgrade UNIQUE_TEXT, " +
+                "upgrade LONG_UNIQUE_TEXT, " +
                 "level INTEGER" +
                 ");");
+
+        SQLHelper.executeUpdate("ALTER TABLE {prefix}islands_upgrades MODIFY COLUMN upgrade LONG_UNIQUE_TEXT",
+                error -> {
+                });
 
         SQLHelper.executeUpdate("CREATE TABLE IF NOT EXISTS {prefix}islands_visitor_homes (" +
                 "island UUID, " +
@@ -277,19 +305,27 @@ public final class SQLDatabaseInitializer {
 
         SQLHelper.executeUpdate("CREATE TABLE IF NOT EXISTS {prefix}islands_warp_categories (" +
                 "island UUID, " +
-                "name VARCHAR(255), " +
+                "name LONG_UNIQUE_TEXT, " +
                 "slot INTEGER, " +
                 "icon TEXT" +
                 ");");
 
+        SQLHelper.executeUpdate("ALTER TABLE {prefix}islands_warp_categories MODIFY COLUMN name LONG_UNIQUE_TEXT",
+                error -> {
+                });
+
         SQLHelper.executeUpdate("CREATE TABLE IF NOT EXISTS {prefix}islands_warps (" +
                 "island UUID, " +
-                "name VARCHAR(255), " +
+                "name LONG_UNIQUE_TEXT, " +
                 "category TEXT, " +
                 "location TEXT, " +
                 "private BOOLEAN, " +
                 "icon TEXT" +
                 ");");
+
+        SQLHelper.executeUpdate("ALTER TABLE {prefix}islands_warps MODIFY COLUMN name LONG_UNIQUE_TEXT",
+                error -> {
+                });
     }
 
     private void createPlayersTable() {
@@ -303,9 +339,13 @@ public final class SQLDatabaseInitializer {
 
         SQLHelper.executeUpdate("CREATE TABLE IF NOT EXISTS {prefix}players_missions (" +
                 "player UUID, " +
-                "name UNIQUE_TEXT, " +
+                "name LONG_UNIQUE_TEXT, " +
                 "finish_count INTEGER" +
                 ");");
+
+        SQLHelper.executeUpdate("ALTER TABLE {prefix}players_missions MODIFY COLUMN name LONG_UNIQUE_TEXT",
+                error -> {
+                });
 
         SQLHelper.executeUpdate("CREATE TABLE IF NOT EXISTS {prefix}players_settings (" +
                 "player UUID PRIMARY KEY, " +
@@ -339,10 +379,17 @@ public final class SQLDatabaseInitializer {
 
     private void createStackedBlocksTable() {
         SQLHelper.executeUpdate("CREATE TABLE IF NOT EXISTS {prefix}stacked_blocks (" +
-                "location VARCHAR(30) PRIMARY KEY, " +
+                "location LONG_UNIQUE_TEXT PRIMARY KEY, " +
                 "block_type TEXT, " +
                 "amount INTEGER" +
                 ");");
+        // Before v1.8.1.363, location column of stacked_blocks was limited to 30 chars.
+        // In order to make sure all tables keep the large number, we modify the column to 255-chars long
+        // each time the plugin attempts to create the table.
+        // https://github.com/BG-Software-LLC/SuperiorSkyblock2/issues/730
+        SQLHelper.executeUpdate("ALTER TABLE {prefix}stacked_blocks MODIFY COLUMN location LONG_UNIQUE_TEXT",
+                error -> {
+                });
     }
 
     private boolean containsGrid() {
@@ -402,6 +449,7 @@ public final class SQLDatabaseInitializer {
                     }
                 } catch (Exception ex) {
                     ex.printStackTrace();
+                    PluginDebugger.debug(ex);
                 }
             }, Throwable::printStackTrace);
         } else {
@@ -415,6 +463,7 @@ public final class SQLDatabaseInitializer {
                     }
                 } catch (Exception ex) {
                     ex.printStackTrace();
+                    PluginDebugger.debug(ex);
                 }
             }, Throwable::printStackTrace);
         }

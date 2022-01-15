@@ -1,8 +1,8 @@
 package com.bgsoftware.superiorskyblock.commands.admin;
 
+import com.bgsoftware.superiorskyblock.lang.Message;
 import com.bgsoftware.superiorskyblock.SuperiorSkyblockPlugin;
 import com.bgsoftware.superiorskyblock.api.wrappers.SuperiorPlayer;
-import com.bgsoftware.superiorskyblock.Locale;
 import com.bgsoftware.superiorskyblock.commands.ISuperiorCommand;
 import org.bukkit.command.CommandSender;
 
@@ -29,7 +29,7 @@ public final class CmdAdminBypass implements ISuperiorCommand {
 
     @Override
     public String getDescription(java.util.Locale locale) {
-        return Locale.COMMAND_DESCRIPTION_ADMIN_BYPASS.getMessage(locale);
+        return Message.COMMAND_DESCRIPTION_ADMIN_BYPASS.getMessage(locale);
     }
 
     @Override
@@ -51,12 +51,10 @@ public final class CmdAdminBypass implements ISuperiorCommand {
     public void execute(SuperiorSkyblockPlugin plugin, CommandSender sender, String[] args) {
         SuperiorPlayer superiorPlayer = plugin.getPlayers().getSuperiorPlayer(sender);
 
-        if(superiorPlayer.hasBypassModeEnabled()){
-            Locale.TOGGLED_BYPASS_OFF.send(superiorPlayer);
-        }
-
-        else{
-            Locale.TOGGLED_BYPASS_ON.send(superiorPlayer);
+        if (superiorPlayer.hasBypassModeEnabled()) {
+            Message.TOGGLED_BYPASS_OFF.send(superiorPlayer);
+        } else {
+            Message.TOGGLED_BYPASS_ON.send(superiorPlayer);
         }
 
         superiorPlayer.toggleBypassMode();

@@ -10,11 +10,12 @@ import com.bgsoftware.superiorskyblock.database.loader.DatabaseLoader;
 import com.bgsoftware.superiorskyblock.database.loader.v1.DatabaseLoader_V1;
 import com.bgsoftware.superiorskyblock.database.sql.SQLDatabaseInitializer;
 import com.bgsoftware.superiorskyblock.handler.AbstractHandler;
+import com.bgsoftware.superiorskyblock.handler.HandlerLoadException;
 import com.bgsoftware.superiorskyblock.island.SPlayerRole;
 import com.bgsoftware.superiorskyblock.island.bank.SBankTransaction;
 import com.bgsoftware.superiorskyblock.module.BuiltinModules;
-import com.bgsoftware.superiorskyblock.handler.HandlerLoadException;
-import com.bgsoftware.superiorskyblock.utils.threads.Executor;
+import com.bgsoftware.superiorskyblock.threads.Executor;
+import com.bgsoftware.superiorskyblock.utils.debug.PluginDebugger;
 import org.bukkit.Bukkit;
 
 import java.util.ArrayList;
@@ -39,10 +40,10 @@ public final class DataHandler extends AbstractHandler {
     public void loadDataWithException() throws HandlerLoadException {
         loadDatabaseLoaders();
 
-        for(DatabaseLoader databaseLoader : databaseLoaders) {
+        for (DatabaseLoader databaseLoader : databaseLoaders) {
             try {
                 databaseLoader.loadData();
-            }catch (Exception error) {
+            } catch (Exception error) {
                 throw new HandlerLoadException(error, "&cUnexpected error occurred while converting data:", HandlerLoadException.ErrorLevel.SERVER_SHUTDOWN);
             }
         }
@@ -51,10 +52,10 @@ public final class DataHandler extends AbstractHandler {
             SQLDatabaseInitializer.getInstance().init(plugin);
         }
 
-        for(DatabaseLoader databaseLoader : databaseLoaders) {
+        for (DatabaseLoader databaseLoader : databaseLoaders) {
             try {
                 databaseLoader.saveData();
-            }catch (Exception error) {
+            } catch (Exception error) {
                 throw new HandlerLoadException(error, "&cUnexpected error occurred while saving data:", HandlerLoadException.ErrorLevel.SERVER_SHUTDOWN);
             }
         }
@@ -80,7 +81,7 @@ public final class DataHandler extends AbstractHandler {
         }
     }
 
-    public void addDatabaseLoader(DatabaseLoader databaseLoader){
+    public void addDatabaseLoader(DatabaseLoader databaseLoader) {
         this.databaseLoaders.add(databaseLoader);
     }
 
@@ -96,6 +97,7 @@ public final class DataHandler extends AbstractHandler {
             GridDatabaseBridge.insertGrid(plugin.getGrid());
         } catch (Exception ex) {
             ex.printStackTrace();
+            PluginDebugger.debug(ex);
         }
     }
 
@@ -157,6 +159,7 @@ public final class DataHandler extends AbstractHandler {
                 } catch (Exception error) {
                     SuperiorSkyblockPlugin.log("&cError occurred while loading bank transaction:");
                     error.printStackTrace();
+                    PluginDebugger.debug(error);
                 }
             });
 

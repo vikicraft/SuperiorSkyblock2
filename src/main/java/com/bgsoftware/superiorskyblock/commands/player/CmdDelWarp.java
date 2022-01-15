@@ -1,14 +1,14 @@
 package com.bgsoftware.superiorskyblock.commands.player;
 
+import com.bgsoftware.superiorskyblock.lang.Message;
 import com.bgsoftware.superiorskyblock.SuperiorSkyblockPlugin;
 import com.bgsoftware.superiorskyblock.api.island.Island;
 import com.bgsoftware.superiorskyblock.api.island.IslandPrivilege;
 import com.bgsoftware.superiorskyblock.api.island.warps.IslandWarp;
 import com.bgsoftware.superiorskyblock.api.wrappers.SuperiorPlayer;
-import com.bgsoftware.superiorskyblock.commands.IPermissibleCommand;
 import com.bgsoftware.superiorskyblock.commands.CommandTabCompletes;
-import com.bgsoftware.superiorskyblock.utils.islands.IslandPrivileges;
-import com.bgsoftware.superiorskyblock.Locale;
+import com.bgsoftware.superiorskyblock.commands.IPermissibleCommand;
+import com.bgsoftware.superiorskyblock.island.permissions.IslandPrivileges;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.Sign;
@@ -32,12 +32,12 @@ public final class CmdDelWarp implements IPermissibleCommand {
 
     @Override
     public String getUsage(java.util.Locale locale) {
-        return "delwarp <" + Locale.COMMAND_ARGUMENT_WARP_NAME.getMessage(locale) + "...>";
+        return "delwarp <" + Message.COMMAND_ARGUMENT_WARP_NAME.getMessage(locale) + "...>";
     }
 
     @Override
     public String getDescription(java.util.Locale locale) {
-        return Locale.COMMAND_DESCRIPTION_DEL_WARP.getMessage(locale);
+        return Message.COMMAND_DESCRIPTION_DEL_WARP.getMessage(locale);
     }
 
     @Override
@@ -61,23 +61,23 @@ public final class CmdDelWarp implements IPermissibleCommand {
     }
 
     @Override
-    public Locale getPermissionLackMessage() {
-        return Locale.NO_DELETE_WARP_PERMISSION;
+    public Message getPermissionLackMessage() {
+        return Message.NO_DELETE_WARP_PERMISSION;
     }
 
     @Override
     public void execute(SuperiorSkyblockPlugin plugin, SuperiorPlayer superiorPlayer, Island island, String[] args) {
         StringBuilder warpNameBuilder = new StringBuilder();
 
-        for(int i = 1; i < args.length; i++)
+        for (int i = 1; i < args.length; i++)
             warpNameBuilder.append(" ").append(args[i]);
 
         String warpName = warpNameBuilder.length() == 0 ? "" : warpNameBuilder.substring(1);
 
         IslandWarp islandWarp = island.getWarp(warpName);
 
-        if(islandWarp == null){
-            Locale.INVALID_WARP.send(superiorPlayer, warpName);
+        if (islandWarp == null) {
+            Message.INVALID_WARP.send(superiorPlayer, warpName);
             return;
         }
 
@@ -85,7 +85,7 @@ public final class CmdDelWarp implements IPermissibleCommand {
 
         Block signBlock = islandWarp.getLocation().getBlock();
 
-        if(signBlock.getState() instanceof Sign){
+        if (signBlock.getState() instanceof Sign) {
             signBlock.setType(Material.AIR);
             signBlock.getWorld().dropItemNaturally(signBlock.getLocation(), new ItemStack(Material.SIGN));
             breakSign = true;
@@ -93,10 +93,10 @@ public final class CmdDelWarp implements IPermissibleCommand {
 
         island.deleteWarp(warpName);
 
-        Locale.DELETE_WARP.send(superiorPlayer, warpName);
+        Message.DELETE_WARP.send(superiorPlayer, warpName);
 
-        if(breakSign){
-            Locale.DELETE_WARP_SIGN_BROKE.send(superiorPlayer);
+        if (breakSign) {
+            Message.DELETE_WARP_SIGN_BROKE.send(superiorPlayer);
         }
     }
 

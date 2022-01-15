@@ -1,13 +1,13 @@
 package com.bgsoftware.superiorskyblock.commands.player;
 
-import com.bgsoftware.superiorskyblock.Locale;
+import com.bgsoftware.superiorskyblock.lang.Message;
 import com.bgsoftware.superiorskyblock.SuperiorSkyblockPlugin;
 import com.bgsoftware.superiorskyblock.api.island.Island;
 import com.bgsoftware.superiorskyblock.api.objects.Pair;
 import com.bgsoftware.superiorskyblock.api.wrappers.SuperiorPlayer;
-import com.bgsoftware.superiorskyblock.commands.ISuperiorCommand;
 import com.bgsoftware.superiorskyblock.commands.CommandArguments;
 import com.bgsoftware.superiorskyblock.commands.CommandTabCompletes;
+import com.bgsoftware.superiorskyblock.commands.ISuperiorCommand;
 import com.bgsoftware.superiorskyblock.utils.islands.IslandUtils;
 import org.bukkit.command.CommandSender;
 
@@ -29,12 +29,12 @@ public final class CmdTransfer implements ISuperiorCommand {
 
     @Override
     public String getUsage(java.util.Locale locale) {
-        return "transfer <" + Locale.COMMAND_ARGUMENT_PLAYER_NAME.getMessage(locale) + ">";
+        return "transfer <" + Message.COMMAND_ARGUMENT_PLAYER_NAME.getMessage(locale) + ">";
     }
 
     @Override
     public String getDescription(java.util.Locale locale) {
-        return Locale.COMMAND_DESCRIPTION_TRANSFER.getMessage(locale);
+        return Message.COMMAND_DESCRIPTION_TRANSFER.getMessage(locale);
     }
 
     @Override
@@ -59,33 +59,33 @@ public final class CmdTransfer implements ISuperiorCommand {
 
         Island island = arguments.getKey();
 
-        if(island == null)
+        if (island == null)
             return;
 
         SuperiorPlayer superiorPlayer = arguments.getValue();
 
         if (!superiorPlayer.getPlayerRole().isLastRole()) {
-            Locale.NO_TRANSFER_PERMISSION.send(superiorPlayer);
+            Message.NO_TRANSFER_PERMISSION.send(superiorPlayer);
             return;
         }
 
         SuperiorPlayer targetPlayer = CommandArguments.getPlayer(plugin, superiorPlayer, args[1]);
 
-        if(targetPlayer == null)
+        if (targetPlayer == null)
             return;
 
         if (!island.isMember(targetPlayer)) {
-            Locale.PLAYER_NOT_INSIDE_ISLAND.send(sender);
+            Message.PLAYER_NOT_INSIDE_ISLAND.send(sender);
             return;
         }
 
         if (island.getOwner().getUniqueId().equals(targetPlayer.getUniqueId())) {
-            Locale.TRANSFER_ALREADY_LEADER.send(superiorPlayer);
+            Message.TRANSFER_ALREADY_LEADER.send(superiorPlayer);
             return;
         }
 
-        if(island.transferIsland(targetPlayer))
-            IslandUtils.sendMessage(island, Locale.TRANSFER_BROADCAST, new ArrayList<>(), targetPlayer.getName());
+        if (island.transferIsland(targetPlayer))
+            IslandUtils.sendMessage(island, Message.TRANSFER_BROADCAST, new ArrayList<>(), targetPlayer.getName());
     }
 
     @Override

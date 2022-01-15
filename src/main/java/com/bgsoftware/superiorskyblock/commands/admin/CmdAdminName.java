@@ -1,6 +1,6 @@
 package com.bgsoftware.superiorskyblock.commands.admin;
 
-import com.bgsoftware.superiorskyblock.Locale;
+import com.bgsoftware.superiorskyblock.lang.Message;
 import com.bgsoftware.superiorskyblock.SuperiorSkyblockPlugin;
 import com.bgsoftware.superiorskyblock.api.island.Island;
 import com.bgsoftware.superiorskyblock.api.wrappers.SuperiorPlayer;
@@ -28,14 +28,14 @@ public final class CmdAdminName implements IAdminIslandCommand {
     @Override
     public String getUsage(java.util.Locale locale) {
         return "admin name <" +
-                Locale.COMMAND_ARGUMENT_PLAYER_NAME.getMessage(locale) + "/" +
-                Locale.COMMAND_ARGUMENT_ISLAND_NAME.getMessage(locale) + "> <" +
-                Locale.COMMAND_ARGUMENT_ISLAND_NAME.getMessage(locale) + ">";
+                Message.COMMAND_ARGUMENT_PLAYER_NAME.getMessage(locale) + "/" +
+                Message.COMMAND_ARGUMENT_ISLAND_NAME.getMessage(locale) + "> <" +
+                Message.COMMAND_ARGUMENT_ISLAND_NAME.getMessage(locale) + ">";
     }
 
     @Override
     public String getDescription(java.util.Locale locale) {
-        return Locale.COMMAND_DESCRIPTION_ADMIN_NAME.getMessage(locale);
+        return Message.COMMAND_DESCRIPTION_ADMIN_NAME.getMessage(locale);
     }
 
     @Override
@@ -62,7 +62,7 @@ public final class CmdAdminName implements IAdminIslandCommand {
     public void execute(SuperiorSkyblockPlugin plugin, CommandSender sender, SuperiorPlayer targetPlayer, Island island, String[] args) {
         String islandName = args[3];
 
-        if(!StringUtils.isValidName(sender, island, islandName))
+        if (!StringUtils.isValidName(sender, island, islandName))
             return;
 
         String oldName = island.getName();
@@ -71,13 +71,13 @@ public final class CmdAdminName implements IAdminIslandCommand {
         String coloredName = plugin.getSettings().getIslandNames().isColorSupport() ?
                 StringUtils.translateColors(islandName) : islandName;
 
-        for(Player player : Bukkit.getOnlinePlayers())
-            Locale.NAME_ANNOUNCEMENT.send(player, sender.getName(), coloredName);
+        for (Player player : Bukkit.getOnlinePlayers())
+            Message.NAME_ANNOUNCEMENT.send(player, sender.getName(), coloredName);
 
-        if(targetPlayer == null)
-            Locale.CHANGED_NAME_OTHER_NAME.send(sender, oldName, coloredName);
+        if (targetPlayer == null)
+            Message.CHANGED_NAME_OTHER_NAME.send(sender, oldName, coloredName);
         else
-            Locale.CHANGED_NAME_OTHER.send(sender, targetPlayer.getName(), coloredName);
+            Message.CHANGED_NAME_OTHER.send(sender, targetPlayer.getName(), coloredName);
     }
 
 }

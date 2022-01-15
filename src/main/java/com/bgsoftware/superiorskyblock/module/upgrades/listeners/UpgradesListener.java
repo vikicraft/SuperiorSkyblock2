@@ -1,17 +1,15 @@
 package com.bgsoftware.superiorskyblock.module.upgrades.listeners;
 
-import com.bgsoftware.superiorskyblock.Locale;
+import com.bgsoftware.superiorskyblock.lang.Message;
 import com.bgsoftware.superiorskyblock.SuperiorSkyblockPlugin;
 import com.bgsoftware.superiorskyblock.api.island.Island;
-import com.bgsoftware.superiorskyblock.api.island.IslandChest;
-import com.bgsoftware.superiorskyblock.island.SIslandChest;
+import com.bgsoftware.superiorskyblock.key.ConstantKeys;
+import com.bgsoftware.superiorskyblock.key.Key;
 import com.bgsoftware.superiorskyblock.utils.LocationUtils;
 import com.bgsoftware.superiorskyblock.utils.ServerVersion;
 import com.bgsoftware.superiorskyblock.utils.StringUtils;
 import com.bgsoftware.superiorskyblock.utils.entities.EntityUtils;
-import com.bgsoftware.superiorskyblock.key.ConstantKeys;
-import com.bgsoftware.superiorskyblock.key.Key;
-import com.bgsoftware.superiorskyblock.utils.threads.Executor;
+import com.bgsoftware.superiorskyblock.threads.Executor;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import org.bukkit.Bukkit;
@@ -36,12 +34,10 @@ import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.entity.EntitySpawnEvent;
 import org.bukkit.event.entity.SpawnerSpawnEvent;
 import org.bukkit.event.hanging.HangingPlaceEvent;
-import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.player.PlayerBucketEmptyEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.vehicle.VehicleCreateEvent;
 import org.bukkit.event.vehicle.VehicleDestroyEvent;
-import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.ArrayList;
@@ -54,43 +50,49 @@ import java.util.concurrent.TimeUnit;
 @SuppressWarnings("unused")
 public final class UpgradesListener implements Listener {
 
+    public static UpgradesListener IMP;
+
     private final Set<UUID> alreadySet = new HashSet<>();
     private final Set<UUID> noRightClickTwice = new HashSet<>();
     private final SuperiorSkyblockPlugin plugin;
-
-    public UpgradesListener(SuperiorSkyblockPlugin plugin){
-        this.plugin = plugin;
-        Executor.sync(() -> {
-            if(Bukkit.getPluginManager().isPluginEnabled("WildStacker"))
-                Bukkit.getPluginManager().registerEvents(new WildStackerListener(), plugin);
-        }, 1L);
-    }
+    @SuppressWarnings("UnstableApiUsage")
+    private final Cache<Location, UUID> vehiclesOwners = CacheBuilder.newBuilder()
+            .expireAfterWrite(2, TimeUnit.SECONDS).build();
 
     /*
      *   SPAWNER RATES
      */
+
+    public UpgradesListener(SuperiorSkyblockPlugin plugin) {
+        this.plugin = plugin;
+        IMP = this;
+    }
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onSpawn(SpawnerSpawnEvent e) {
         handleSpawnerSpawn(e.getSpawner());
     }
 
-    private void handleSpawnerSpawn(CreatureSpawner spawner){
-        if(spawner == null || spawner.getLocation() == null)
+    /*
+     *   MOB DROPS
+     */
+
+    public void handleSpawnerSpawn(CreatureSpawner spawner) {
+        if (spawner == null || spawner.getLocation() == null)
             return;
 
         Island island = plugin.getGrid().getIslandAt(spawner.getLocation());
 
-        if(island == null)
+        if (island == null)
             return;
 
         double spawnerRatesMultiplier = island.getSpawnerRatesMultiplier();
 
-        if(spawnerRatesMultiplier > 1 && !alreadySet.contains(island.getOwner().getUniqueId())){
+        if (spawnerRatesMultiplier > 1 && !alreadySet.contains(island.getOwner().getUniqueId())) {
             alreadySet.add(island.getOwner().getUniqueId());
             Executor.sync(() -> {
                 int spawnDelay = plugin.getNMSWorld().getSpawnerDelay(spawner);
-                if(spawnDelay > 0) {
+                if (spawnDelay > 0) {
                     plugin.getNMSWorld().setSpawnerDelay(spawner, (int) Math.round(spawnDelay / spawnerRatesMultiplier));
                     Executor.sync(() -> alreadySet.remove(island.getOwner().getUniqueId()), 10L);
                 }
@@ -98,40 +100,35 @@ public final class UpgradesListener implements Listener {
         }
     }
 
-    /*
-     *   MOB DROPS
-     */
-
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onEntityDeath(EntityDeathEvent e) {
         Island island = plugin.getGrid().getIslandAt(e.getEntity().getLocation());
 
-        if(island == null)
+        if (island == null)
             return;
 
-        if(e.getEntity() instanceof Player)
+        if (e.getEntity() instanceof Player)
             return;
 
-        if(plugin.getSettings().isDropsUpgradePlayersMultiply()){
+        if (plugin.getSettings().isDropsUpgradePlayersMultiply()) {
             EntityDamageEvent lastDamage = e.getEntity().getLastDamageCause();
-            if(!(lastDamage instanceof EntityDamageByEntityEvent) ||
+            if (!(lastDamage instanceof EntityDamageByEntityEvent) ||
                     EntityUtils.getPlayerDamager((EntityDamageByEntityEvent) lastDamage) == null)
                 return;
         }
 
         double mobDropsMultiplier = island.getMobDropsMultiplier();
 
-        if(mobDropsMultiplier > 1){
+        if (mobDropsMultiplier > 1) {
             List<ItemStack> dropItems = new ArrayList<>(e.getDrops());
-            for(ItemStack itemStack : dropItems){
-                if(itemStack != null && !EntityUtils.isEquipment(e.getEntity(), itemStack) &&
+            for (ItemStack itemStack : dropItems) {
+                if (itemStack != null && !EntityUtils.isEquipment(e.getEntity(), itemStack) &&
                         !plugin.getNMSTags().getNBTTag(itemStack).getValue().containsKey("WildChests")) {
                     int newAmount = (int) (itemStack.getAmount() * mobDropsMultiplier);
 
-                    if(Bukkit.getPluginManager().isPluginEnabled("WildStacker")){
+                    if (Bukkit.getPluginManager().isPluginEnabled("WildStacker")) {
                         itemStack.setAmount(newAmount);
-                    }
-                    else {
+                    } else {
                         int stackAmounts = newAmount / itemStack.getMaxStackSize();
                         int leftOvers = newAmount % itemStack.getMaxStackSize();
                         boolean usedOriginal = false;
@@ -164,44 +161,44 @@ public final class UpgradesListener implements Listener {
         EntityUtils.clearEntityEquipment(e.getEntity());
     }
 
+    /*
+     *   BLOCK LIMIT
+     */
+
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
-    public void onLastDamageEntity(EntityDamageEvent e){
-        if(!(e.getEntity() instanceof LivingEntity))
+    public void onLastDamageEntity(EntityDamageEvent e) {
+        if (!(e.getEntity() instanceof LivingEntity))
             return;
 
         LivingEntity livingEntity = (LivingEntity) e.getEntity();
 
-        if(!(livingEntity instanceof ArmorStand) && livingEntity.getHealth() - e.getFinalDamage() > 0)
+        if (!(livingEntity instanceof ArmorStand) && livingEntity.getHealth() - e.getFinalDamage() > 0)
             return;
 
         Island island = plugin.getGrid().getIslandAt(livingEntity.getLocation());
 
-        if(island == null)
+        if (island == null)
             return;
 
         EntityUtils.cacheEntityEquipment(livingEntity);
     }
 
-    /*
-     *   BLOCK LIMIT
-     */
-
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-    public void onCartPlaceMonitor(PlayerInteractEvent e){
-        if(e.getAction() != Action.RIGHT_CLICK_BLOCK || noRightClickTwice.contains(e.getPlayer().getUniqueId()) ||
+    public void onCartPlaceMonitor(PlayerInteractEvent e) {
+        if (e.getAction() != Action.RIGHT_CLICK_BLOCK || noRightClickTwice.contains(e.getPlayer().getUniqueId()) ||
                 !e.getClickedBlock().getType().name().contains("RAIL") || e.getItem() == null ||
                 !e.getItem().getType().name().contains("MINECART"))
             return;
 
         Island island = plugin.getGrid().getIslandAt(e.getClickedBlock().getLocation());
 
-        if(island == null)
+        if (island == null)
             return;
 
         noRightClickTwice.add(e.getPlayer().getUniqueId());
         Executor.sync(() -> noRightClickTwice.remove(e.getPlayer().getUniqueId()), 2L);
 
-        switch (e.getItem().getType().name()){
+        switch (e.getItem().getType().name()) {
             case "HOPPER_MINECART":
                 island.handleBlockPlace(ConstantKeys.HOPPER, 1);
                 break;
@@ -226,48 +223,48 @@ public final class UpgradesListener implements Listener {
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-    public void onCartBreakMonitor(VehicleDestroyEvent e){
-        if(!(e.getVehicle() instanceof Minecart))
+    public void onCartBreakMonitor(VehicleDestroyEvent e) {
+        if (!(e.getVehicle() instanceof Minecart))
             return;
 
         Island island = plugin.getGrid().getIslandAt(e.getVehicle().getLocation());
 
-        if(island == null)
+        if (island == null)
             return;
 
         island.handleBlockBreak(plugin.getNMSAlgorithms().getMinecartBlock((Minecart) e.getVehicle()), 1);
     }
 
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
-    public void onBlockPlace(BlockPlaceEvent e){
+    public void onBlockPlace(BlockPlaceEvent e) {
         Island island = plugin.getGrid().getIslandAt(e.getBlockPlaced().getLocation());
 
-        if(island == null)
+        if (island == null)
             return;
 
         Key blockKey = Key.of(e.getBlock());
 
-        if(island.hasReachedBlockLimit(blockKey)){
+        if (island.hasReachedBlockLimit(blockKey)) {
             e.setCancelled(true);
-            Locale.REACHED_BLOCK_LIMIT.send(e.getPlayer(), StringUtils.format(blockKey.toString()));
+            Message.REACHED_BLOCK_LIMIT.send(e.getPlayer(), StringUtils.format(blockKey.toString()));
         }
     }
 
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onCartPlace(PlayerInteractEvent e) {
-        if(e.getAction() != Action.RIGHT_CLICK_BLOCK || noRightClickTwice.contains(e.getPlayer().getUniqueId()) ||
+        if (e.getAction() != Action.RIGHT_CLICK_BLOCK || noRightClickTwice.contains(e.getPlayer().getUniqueId()) ||
                 !e.getClickedBlock().getType().name().contains("RAIL") || e.getItem() == null ||
                 !e.getItem().getType().name().contains("MINECART"))
             return;
 
         Island island = plugin.getGrid().getIslandAt(e.getClickedBlock().getLocation());
 
-        if(island == null)
+        if (island == null)
             return;
 
         Key key = null;
 
-        switch (e.getItem().getType().name()){
+        switch (e.getItem().getType().name()) {
             case "HOPPER_MINECART":
                 key = ConstantKeys.HOPPER;
                 break;
@@ -289,24 +286,9 @@ public final class UpgradesListener implements Listener {
                 break;
         }
 
-        if(key != null && island.hasReachedBlockLimit(key)){
+        if (key != null && island.hasReachedBlockLimit(key)) {
             e.setCancelled(true);
-            Locale.REACHED_BLOCK_LIMIT.send(e.getPlayer(), StringUtils.format(key.getGlobalKey()));
-        }
-    }
-
-    @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
-    public void onBucketEmpty(PlayerBucketEmptyEvent e){
-        Island island = plugin.getGrid().getIslandAt(e.getBlockClicked().getLocation());
-
-        if(island == null)
-            return;
-
-        Key blockKey = Key.of(e.getBucket().name().replace("_BUCKET", ""));
-
-        if(island.hasReachedBlockLimit(blockKey)){
-            e.setCancelled(true);
-            Locale.REACHED_BLOCK_LIMIT.send(e.getPlayer(), StringUtils.format(blockKey.toString()));
+            Message.REACHED_BLOCK_LIMIT.send(e.getPlayer(), StringUtils.format(key.getGlobalKey()));
         }
     }
 
@@ -314,22 +296,36 @@ public final class UpgradesListener implements Listener {
      *   ENTITY LIMIT
      */
 
-    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-    public void onEntitySpawn(EntitySpawnEvent e){
-        Island island = plugin.getGrid().getIslandAt(e.getLocation());
+    @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
+    public void onBucketEmpty(PlayerBucketEmptyEvent e) {
+        Island island = plugin.getGrid().getIslandAt(e.getBlockClicked().getLocation());
 
-        if(island == null)
+        if (island == null)
             return;
 
-        if(!EntityUtils.canHaveLimit(e.getEntityType()))
+        Key blockKey = Key.of(e.getBucket().name().replace("_BUCKET", ""));
+
+        if (island.hasReachedBlockLimit(blockKey)) {
+            e.setCancelled(true);
+            Message.REACHED_BLOCK_LIMIT.send(e.getPlayer(), StringUtils.format(blockKey.toString()));
+        }
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onEntitySpawn(EntitySpawnEvent e) {
+        Island island = plugin.getGrid().getIslandAt(e.getLocation());
+
+        if (island == null)
+            return;
+
+        if (!EntityUtils.canHaveLimit(e.getEntityType()))
             return;
 
         island.hasReachedEntityLimit(Key.of(e.getEntity())).whenComplete((result, ex) -> {
-            if(result) {
-                if(ServerVersion.isAtLeast(ServerVersion.v1_17)){
+            if (result) {
+                if (ServerVersion.isAtLeast(ServerVersion.v1_17)) {
                     Executor.ensureMain(() -> e.getEntity().remove());
-                }
-                else {
+                } else {
                     e.getEntity().remove();
                 }
             }
@@ -337,31 +333,27 @@ public final class UpgradesListener implements Listener {
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-    public void onHangingPlace(HangingPlaceEvent e){
+    public void onHangingPlace(HangingPlaceEvent e) {
         Island island = plugin.getGrid().getIslandAt(e.getEntity().getLocation());
 
-        if(island == null)
+        if (island == null)
             return;
 
-        if(!EntityUtils.canHaveLimit(e.getEntity().getType()))
+        if (!EntityUtils.canHaveLimit(e.getEntity().getType()))
             return;
 
         island.hasReachedEntityLimit(Key.of(e.getEntity())).whenComplete((result, ex) -> {
-            if(result && e.getEntity().isValid() && !e.getEntity().isDead()) {
+            if (result && e.getEntity().isValid() && !e.getEntity().isDead()) {
                 e.getEntity().remove();
-                if(e.getPlayer().getGameMode() != GameMode.CREATIVE)
+                if (e.getPlayer().getGameMode() != GameMode.CREATIVE)
                     e.getPlayer().getInventory().addItem(asItemStack(e.getEntity()));
             }
         });
     }
 
-    @SuppressWarnings("UnstableApiUsage")
-    private final Cache<Location, UUID> vehiclesOwners = CacheBuilder.newBuilder()
-            .expireAfterWrite(2, TimeUnit.SECONDS).build();
-
     @EventHandler
     public void onVehicleSpawn(PlayerInteractEvent e) {
-        if(e.getAction() != Action.RIGHT_CLICK_BLOCK || noRightClickTwice.contains(e.getPlayer().getUniqueId()) ||
+        if (e.getAction() != Action.RIGHT_CLICK_BLOCK || noRightClickTwice.contains(e.getPlayer().getUniqueId()) ||
                 e.getPlayer().getGameMode() == GameMode.CREATIVE || e.getItem() == null ||
                 !e.getClickedBlock().getType().name().contains("RAIL") ||
                 !e.getItem().getType().name().contains("MINECART"))
@@ -369,7 +361,7 @@ public final class UpgradesListener implements Listener {
 
         Island island = plugin.getGrid().getIslandAt(e.getClickedBlock().getLocation());
 
-        if(island == null)
+        if (island == null)
             return;
 
         //noinspection UnstableApiUsage
@@ -377,26 +369,28 @@ public final class UpgradesListener implements Listener {
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-    public void onVehicleSpawn(VehicleCreateEvent e){
-        if(!(e.getVehicle() instanceof Minecart))
+    public void onVehicleSpawn(VehicleCreateEvent e) {
+        if (!(e.getVehicle() instanceof Minecart))
             return;
 
         Island island = plugin.getGrid().getIslandAt(e.getVehicle().getLocation());
 
-        if(island == null)
+        if (island == null)
             return;
 
         //noinspection UnstableApiUsage
         UUID placedVehicle = vehiclesOwners.asMap().get(LocationUtils.getBlockLocation(e.getVehicle().getLocation()));
 
-        if(!EntityUtils.canHaveLimit(e.getVehicle().getType()))
+        if (!EntityUtils.canHaveLimit(e.getVehicle().getType()))
             return;
 
         island.hasReachedEntityLimit(Key.of(e.getVehicle())).whenComplete((result, ex) -> {
-            if(result && e.getVehicle().isValid() && !e.getVehicle().isDead()) {
-                e.getVehicle().remove();
-                if(placedVehicle != null)
-                    Bukkit.getPlayer(placedVehicle).getInventory().addItem(asItemStack(e.getVehicle()));
+            if (result && e.getVehicle().isValid() && !e.getVehicle().isDead()) {
+                Executor.sync(() -> {
+                    e.getVehicle().remove();
+                    if (placedVehicle != null)
+                        Bukkit.getPlayer(placedVehicle).getInventory().addItem(asItemStack(e.getVehicle()));
+                });
             }
         });
     }
@@ -405,34 +399,15 @@ public final class UpgradesListener implements Listener {
      *   ISLAND CHEST
      */
 
-    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
-    public void onIslandChestInteract(InventoryClickEvent e){
-        InventoryHolder inventoryHolder = e.getView().getTopInventory() == null ? null : e.getView().getTopInventory().getHolder();
-
-        if(!(inventoryHolder instanceof IslandChest))
-            return;
-
-        SIslandChest islandChest = (SIslandChest) inventoryHolder;
-
-        if(islandChest.isUpdating()) {
-            e.setCancelled(true);
-        }
-
-        else{
-            islandChest.updateContents();
-        }
-    }
-
-    private ItemStack asItemStack(Entity entity){
-        if(entity instanceof Hanging){
-            switch (entity.getType()){
+    private ItemStack asItemStack(Entity entity) {
+        if (entity instanceof Hanging) {
+            switch (entity.getType()) {
                 case ITEM_FRAME:
                     return new ItemStack(Material.ITEM_FRAME);
                 case PAINTING:
                     return new ItemStack(Material.PAINTING);
             }
-        }
-        else if(entity instanceof Minecart) {
+        } else if (entity instanceof Minecart) {
             Material material = Material.valueOf(plugin.getNMSAlgorithms().getMinecartBlock((Minecart) entity).getGlobalKey());
             switch (material.name()) {
                 case "HOPPER":
@@ -453,15 +428,6 @@ public final class UpgradesListener implements Listener {
         }
 
         throw new IllegalArgumentException("Cannot find an item for " + entity.getType());
-    }
-
-    private class WildStackerListener implements Listener {
-
-        @EventHandler
-        public void onWildStackerStackSpawn(com.bgsoftware.wildstacker.api.events.SpawnerStackedEntitySpawnEvent e){
-            handleSpawnerSpawn(e.getSpawner());
-        }
-
     }
 
 }

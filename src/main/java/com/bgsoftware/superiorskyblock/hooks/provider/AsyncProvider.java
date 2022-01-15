@@ -1,6 +1,6 @@
 package com.bgsoftware.superiorskyblock.hooks.provider;
 
-import com.bgsoftware.superiorskyblock.utils.chunks.ChunkPosition;
+import com.bgsoftware.superiorskyblock.world.chunks.ChunkPosition;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.entity.Entity;
@@ -11,12 +11,12 @@ public interface AsyncProvider {
 
     void loadChunk(ChunkPosition chunkPosition, Consumer<Chunk> chunkResult);
 
-    default void teleport(Entity entity, Location location){
-        teleport(entity, location, r -> {});
+    default void teleport(Entity entity, Location location) {
+        teleport(entity, location, r -> {
+        });
     }
 
     void teleport(Entity entity, Location location, Consumer<Boolean> teleportResult);
-
 
 
 }

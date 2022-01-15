@@ -4,13 +4,13 @@ import com.bgsoftware.common.reflection.ReflectField;
 import com.bgsoftware.superiorskyblock.SuperiorSkyblockPlugin;
 import com.bgsoftware.superiorskyblock.api.island.Island;
 import com.bgsoftware.superiorskyblock.api.wrappers.SuperiorPlayer;
-import com.bgsoftware.superiorskyblock.nms.NMSWorld;
-import com.bgsoftware.superiorskyblock.utils.StringUtils;
-import com.bgsoftware.superiorskyblock.utils.blocks.BlockData;
-import com.bgsoftware.superiorskyblock.utils.blocks.ICachedBlock;
 import com.bgsoftware.superiorskyblock.key.Key;
-import com.bgsoftware.superiorskyblock.utils.logic.BlocksLogic;
+import com.bgsoftware.superiorskyblock.nms.NMSWorld;
 import com.bgsoftware.superiorskyblock.tag.CompoundTag;
+import com.bgsoftware.superiorskyblock.utils.StringUtils;
+import com.bgsoftware.superiorskyblock.world.blocks.BlockData;
+import com.bgsoftware.superiorskyblock.world.blocks.ICachedBlock;
+import com.bgsoftware.superiorskyblock.utils.logic.BlocksLogic;
 import net.minecraft.server.v1_8_R3.BiomeBase;
 import net.minecraft.server.v1_8_R3.BlockDoubleStep;
 import net.minecraft.server.v1_8_R3.BlockPosition;
@@ -49,10 +49,9 @@ import java.util.List;
 
 public final class NMSWorldImpl implements NMSWorld {
 
-    private final SuperiorSkyblockPlugin plugin = SuperiorSkyblockPlugin.getPlugin();
-
     private static final ReflectField<BiomeBase[]> BIOME_BASE_ARRAY = new ReflectField<>(
             "org.bukkit.craftbukkit.VERSION.generator.CustomChunkGenerator$CustomBiomeGrid", BiomeBase[].class, "biome");
+    private final SuperiorSkyblockPlugin plugin = SuperiorSkyblockPlugin.getPlugin();
 
     @Override
     @SuppressWarnings("deprecation")
@@ -157,7 +156,7 @@ public final class NMSWorldImpl implements NMSWorld {
     }
 
     @Override
-    public void setBlocks(org.bukkit.Chunk bukkitChunk, List<com.bgsoftware.superiorskyblock.utils.blocks.BlockData> blockDataList) {
+    public void setBlocks(org.bukkit.Chunk bukkitChunk, List<com.bgsoftware.superiorskyblock.world.blocks.BlockData> blockDataList) {
         Chunk chunk = ((CraftChunk) bukkitChunk).getHandle();
         for (BlockData blockData : blockDataList) {
             NMSUtils.setBlock(chunk, new BlockPosition(blockData.getX(), blockData.getY(), blockData.getZ()),
@@ -291,6 +290,11 @@ public final class NMSWorldImpl implements NMSWorld {
         net.minecraft.server.v1_8_R3.Block.StepSound stepSound = world.getType(blockPosition).getBlock().stepSound;
         world.makeSound(blockPosition.getX() + 0.5F, blockPosition.getY() + 0.5F, blockPosition.getZ() + 0.5F,
                 stepSound.getPlaceSound(), (stepSound.getVolume1() + 1.0F) / 2.0F, stepSound.getVolume2() * 0.8F);
+    }
+
+    @Override
+    public int getMinHeight(World world) {
+        return 0;
     }
 
 }

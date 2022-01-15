@@ -6,9 +6,10 @@ import com.bgsoftware.superiorskyblock.api.handlers.ModulesManager;
 import com.bgsoftware.superiorskyblock.api.modules.ModuleLoadTime;
 import com.bgsoftware.superiorskyblock.api.modules.PluginModule;
 import com.bgsoftware.superiorskyblock.handler.AbstractHandler;
+import com.bgsoftware.superiorskyblock.handler.HandlerLoadException;
 import com.bgsoftware.superiorskyblock.module.container.ModulesContainer;
 import com.bgsoftware.superiorskyblock.utils.FileUtils;
-import com.bgsoftware.superiorskyblock.handler.HandlerLoadException;
+import com.bgsoftware.superiorskyblock.utils.debug.PluginDebugger;
 import com.google.common.base.Preconditions;
 import org.bukkit.Bukkit;
 import org.bukkit.event.Listener;
@@ -126,6 +127,7 @@ public final class ModulesHandler extends AbstractHandler implements ModulesMana
             SuperiorSkyblockPlugin.log("&cAn error occurred while enabling the module " + pluginModule.getName() + ":");
             ex.printStackTrace();
             SuperiorSkyblockPlugin.log("&cContact " + pluginModule.getAuthor() + " regarding this, this has nothing to do with the plugin.");
+            PluginDebugger.debug(ex);
 
             // Calling onDisable so the plugin can unregister its data if needed
             pluginModule.onDisable(plugin);
@@ -148,7 +150,10 @@ public final class ModulesHandler extends AbstractHandler implements ModulesMana
                         registerModule(file);
                     } catch (Exception ex) {
                         SuperiorSkyblockPlugin.log("Couldn't register module " + file.getName() + ": ");
-                        new HandlerLoadException(ex, "Couldn't register module " + file.getName() + ".", HandlerLoadException.ErrorLevel.CONTINUE).printStackTrace();
+                        HandlerLoadException handlerError = new HandlerLoadException(ex, "Couldn't register module " + file.getName() + ".",
+                                HandlerLoadException.ErrorLevel.CONTINUE);
+                        handlerError.printStackTrace();
+                        PluginDebugger.debug(handlerError);
                     }
                 }
             }

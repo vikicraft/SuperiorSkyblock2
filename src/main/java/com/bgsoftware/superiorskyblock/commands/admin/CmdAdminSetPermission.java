@@ -1,16 +1,16 @@
 package com.bgsoftware.superiorskyblock.commands.admin;
 
-import com.bgsoftware.superiorskyblock.Locale;
+import com.bgsoftware.superiorskyblock.lang.Message;
 import com.bgsoftware.superiorskyblock.SuperiorSkyblockPlugin;
 import com.bgsoftware.superiorskyblock.api.island.Island;
 import com.bgsoftware.superiorskyblock.api.island.IslandPrivilege;
 import com.bgsoftware.superiorskyblock.api.island.PlayerRole;
 import com.bgsoftware.superiorskyblock.api.wrappers.SuperiorPlayer;
-import com.bgsoftware.superiorskyblock.commands.IAdminIslandCommand;
-import com.bgsoftware.superiorskyblock.utils.StringUtils;
 import com.bgsoftware.superiorskyblock.commands.CommandArguments;
 import com.bgsoftware.superiorskyblock.commands.CommandTabCompletes;
-import com.bgsoftware.superiorskyblock.utils.threads.Executor;
+import com.bgsoftware.superiorskyblock.commands.IAdminIslandCommand;
+import com.bgsoftware.superiorskyblock.utils.StringUtils;
+import com.bgsoftware.superiorskyblock.threads.Executor;
 import org.bukkit.command.CommandSender;
 
 import java.util.ArrayList;
@@ -32,16 +32,16 @@ public final class CmdAdminSetPermission implements IAdminIslandCommand {
     @Override
     public String getUsage(java.util.Locale locale) {
         return "admin setpermission <" +
-                Locale.COMMAND_ARGUMENT_PLAYER_NAME.getMessage(locale) + "/" +
-                Locale.COMMAND_ARGUMENT_ISLAND_NAME.getMessage(locale) + "/" +
-                Locale.COMMAND_ARGUMENT_ALL_ISLANDS.getMessage(locale) + "> <" +
-                Locale.COMMAND_ARGUMENT_PERMISSION.getMessage(locale) + "> <" +
-                Locale.COMMAND_ARGUMENT_ISLAND_ROLE.getMessage(locale) + ">";
+                Message.COMMAND_ARGUMENT_PLAYER_NAME.getMessage(locale) + "/" +
+                Message.COMMAND_ARGUMENT_ISLAND_NAME.getMessage(locale) + "/" +
+                Message.COMMAND_ARGUMENT_ALL_ISLANDS.getMessage(locale) + "> <" +
+                Message.COMMAND_ARGUMENT_PERMISSION.getMessage(locale) + "> <" +
+                Message.COMMAND_ARGUMENT_ISLAND_ROLE.getMessage(locale) + ">";
     }
 
     @Override
     public String getDescription(java.util.Locale locale) {
-        return Locale.COMMAND_DESCRIPTION_ADMIN_SET_PERMISSION.getMessage(locale);
+        return Message.COMMAND_DESCRIPTION_ADMIN_SET_PERMISSION.getMessage(locale);
     }
 
     @Override
@@ -68,22 +68,22 @@ public final class CmdAdminSetPermission implements IAdminIslandCommand {
     public void execute(SuperiorSkyblockPlugin plugin, CommandSender sender, SuperiorPlayer targetPlayer, List<Island> islands, String[] args) {
         IslandPrivilege islandPrivilege = CommandArguments.getIslandPrivilege(sender, args[3]);
 
-        if(islandPrivilege == null)
+        if (islandPrivilege == null)
             return;
 
         PlayerRole playerRole = CommandArguments.getPlayerRole(sender, args[4]);
 
-        if(playerRole == null)
+        if (playerRole == null)
             return;
 
         Executor.data(() -> islands.forEach(island -> island.setPermission(playerRole, islandPrivilege, true)));
 
-        if(islands.size() > 1)
-            Locale.PERMISSION_CHANGED_ALL.send(sender, StringUtils.format(islandPrivilege.getName()));
-        else if(targetPlayer == null)
-            Locale.PERMISSION_CHANGED_NAME.send(sender, StringUtils.format(islandPrivilege.getName()), islands.get(0).getName());
+        if (islands.size() > 1)
+            Message.PERMISSION_CHANGED_ALL.send(sender, StringUtils.format(islandPrivilege.getName()));
+        else if (targetPlayer == null)
+            Message.PERMISSION_CHANGED_NAME.send(sender, StringUtils.format(islandPrivilege.getName()), islands.get(0).getName());
         else
-            Locale.PERMISSION_CHANGED.send(sender, StringUtils.format(islandPrivilege.getName()), targetPlayer.getName());
+            Message.PERMISSION_CHANGED.send(sender, StringUtils.format(islandPrivilege.getName()), targetPlayer.getName());
     }
 
     @Override

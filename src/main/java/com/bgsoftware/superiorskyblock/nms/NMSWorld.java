@@ -2,14 +2,15 @@ package com.bgsoftware.superiorskyblock.nms;
 
 import com.bgsoftware.superiorskyblock.api.island.Island;
 import com.bgsoftware.superiorskyblock.api.wrappers.SuperiorPlayer;
-import com.bgsoftware.superiorskyblock.utils.blocks.BlockData;
-import com.bgsoftware.superiorskyblock.utils.blocks.ICachedBlock;
 import com.bgsoftware.superiorskyblock.key.Key;
 import com.bgsoftware.superiorskyblock.tag.CompoundTag;
+import com.bgsoftware.superiorskyblock.world.blocks.BlockData;
+import com.bgsoftware.superiorskyblock.world.blocks.ICachedBlock;
 import org.bukkit.Chunk;
 import org.bukkit.ChunkSnapshot;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.World;
 import org.bukkit.block.Biome;
 import org.bukkit.block.Block;
 import org.bukkit.block.CreatureSpawner;
@@ -57,5 +58,7 @@ public interface NMSWorld {
     void playBreakAnimation(Block block);
 
     void playPlaceSound(Location location);
+
+    int getMinHeight(World world);
 
 }

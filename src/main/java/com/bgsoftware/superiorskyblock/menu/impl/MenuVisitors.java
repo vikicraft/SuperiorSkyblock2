@@ -6,9 +6,11 @@ import com.bgsoftware.superiorskyblock.api.island.Island;
 import com.bgsoftware.superiorskyblock.api.menu.ISuperiorMenu;
 import com.bgsoftware.superiorskyblock.api.wrappers.SuperiorPlayer;
 import com.bgsoftware.superiorskyblock.menu.PagedSuperiorMenu;
-import com.bgsoftware.superiorskyblock.utils.FileUtils;
-import com.bgsoftware.superiorskyblock.utils.items.ItemBuilder;
 import com.bgsoftware.superiorskyblock.menu.converter.MenuConverter;
+import com.bgsoftware.superiorskyblock.menu.file.MenuPatternSlots;
+import com.bgsoftware.superiorskyblock.utils.FileUtils;
+import com.bgsoftware.superiorskyblock.utils.debug.PluginDebugger;
+import com.bgsoftware.superiorskyblock.utils.items.ItemBuilder;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.event.inventory.InventoryClickEvent;
@@ -17,7 +19,6 @@ import org.bukkit.inventory.ItemStack;
 import java.io.File;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 
 public final class MenuVisitors extends PagedSuperiorMenu<SuperiorPlayer> {
 
@@ -25,95 +26,54 @@ public final class MenuVisitors extends PagedSuperiorMenu<SuperiorPlayer> {
 
     private final Island island;
 
-    private MenuVisitors(SuperiorPlayer superiorPlayer, Island island){
+    private MenuVisitors(SuperiorPlayer superiorPlayer, Island island) {
         super("menuVisitors", superiorPlayer, true);
         this.island = island;
     }
 
-    @Override
-    protected void onPlayerClick(InventoryClickEvent event, SuperiorPlayer targetPlayer) {
-        if(uniqueVisitorsSlot.contains(event.getRawSlot())){
-            previousMove = false;
-            plugin.getMenus().openUniqueVisitors(superiorPlayer, this, island);
-        }
-        else if(targetPlayer != null){
-            if (event.getClick().name().contains("RIGHT")) {
-                plugin.getCommands().dispatchSubCommand(superiorPlayer.asPlayer(), "invite", targetPlayer.getName());
-            } else if (event.getClick().name().contains("LEFT")) {
-                plugin.getCommands().dispatchSubCommand(superiorPlayer.asPlayer(), "expel", targetPlayer.getName());
-            }
-        }
-    }
-
-    @Override
-    public void cloneAndOpen(ISuperiorMenu previousMenu) {
-        openInventory(superiorPlayer, previousMenu, island);
-    }
-
-    @Override
-    protected ItemStack getObjectItem(ItemStack clickedItem, SuperiorPlayer superiorPlayer) {
-        try {
-            Island island = superiorPlayer.getIsland();
-            String islandOwner = island != null ? island.getOwner().getName() : "None";
-            String islandName = island != null ? island.getName().isEmpty() ? islandOwner : island.getName() : "None";
-            return new ItemBuilder(clickedItem)
-                    .replaceAll("{0}", superiorPlayer.getName())
-                    .replaceAll("{1}", islandOwner)
-                    .replaceAll("{2}", islandName)
-                    .asSkullOf(superiorPlayer).build(superiorPlayer);
-        }catch(Exception ex){
-            SuperiorSkyblockPlugin.log("Failed to load menu because of player: " + superiorPlayer.getName());
-            throw ex;
-        }
-    }
-
-    @Override
-    protected List<SuperiorPlayer> requestObjects() {
-        return island.getIslandVisitors(false);
-    }
-
-    public static void init(){
+    public static void init() {
         MenuVisitors menuVisitors = new MenuVisitors(null, null);
 
         File file = new File(plugin.getDataFolder(), "menus/visitors.yml");
 
-        if(!file.exists())
+        if (!file.exists())
             FileUtils.saveResource("menus/visitors.yml");
 
         CommentedConfiguration cfg = CommentedConfiguration.loadConfiguration(file);
 
-        if(convertOldGUI(cfg)){
+        if (convertOldGUI(cfg)) {
             try {
                 cfg.save(file);
-            }catch (Exception ex){
+            } catch (Exception ex) {
                 ex.printStackTrace();
+                PluginDebugger.debug(ex);
             }
         }
 
-        Map<Character, List<Integer>> charSlots = FileUtils.loadGUI(menuVisitors, "visitors.yml", cfg);
+        MenuPatternSlots menuPatternSlots = FileUtils.loadGUI(menuVisitors, "visitors.yml", cfg);
 
-        uniqueVisitorsSlot = getSlots(cfg, "unique-visitors", charSlots);
+        uniqueVisitorsSlot = getSlots(cfg, "unique-visitors", menuPatternSlots);
 
-        menuVisitors.setPreviousSlot(getSlots(cfg, "previous-page", charSlots));
-        menuVisitors.setCurrentSlot(getSlots(cfg, "current-page", charSlots));
-        menuVisitors.setNextSlot(getSlots(cfg, "next-page", charSlots));
-        menuVisitors.setSlots(getSlots(cfg, "slots", charSlots));
+        menuVisitors.setPreviousSlot(getSlots(cfg, "previous-page", menuPatternSlots));
+        menuVisitors.setCurrentSlot(getSlots(cfg, "current-page", menuPatternSlots));
+        menuVisitors.setNextSlot(getSlots(cfg, "next-page", menuPatternSlots));
+        menuVisitors.setSlots(getSlots(cfg, "slots", menuPatternSlots));
 
         menuVisitors.markCompleted();
     }
 
-    public static void openInventory(SuperiorPlayer superiorPlayer, ISuperiorMenu previousMenu, Island island){
+    public static void openInventory(SuperiorPlayer superiorPlayer, ISuperiorMenu previousMenu, Island island) {
         new MenuVisitors(superiorPlayer, island).open(previousMenu);
     }
 
-    public static void refreshMenus(Island island){
+    public static void refreshMenus(Island island) {
         refreshMenus(MenuVisitors.class, superiorMenu -> superiorMenu.island.equals(island));
     }
 
-    private static boolean convertOldGUI(YamlConfiguration newMenu){
+    private static boolean convertOldGUI(YamlConfiguration newMenu) {
         File oldFile = new File(plugin.getDataFolder(), "guis/panel-gui.yml");
 
-        if(!oldFile.exists())
+        if (!oldFile.exists())
             return false;
 
         //We want to reset the items of newMenu.
@@ -132,7 +92,7 @@ public final class MenuVisitors extends PagedSuperiorMenu<SuperiorPlayer> {
 
         int charCounter = 0;
 
-        if(cfg.contains("visitors-panel.fill-items")) {
+        if (cfg.contains("visitors-panel.fill-items")) {
             charCounter = MenuConverter.convertFillItems(cfg.getConfigurationSection("visitors-panel.fill-items"),
                     charCounter, patternChars, itemsSection, commandsSection, soundsSection);
         }
@@ -147,6 +107,48 @@ public final class MenuVisitors extends PagedSuperiorMenu<SuperiorPlayer> {
         newMenu.set("pattern", MenuConverter.buildPattern(size, patternChars, itemChars[charCounter]));
 
         return true;
+    }
+
+    @Override
+    protected void onPlayerClick(InventoryClickEvent event, SuperiorPlayer targetPlayer) {
+        if (uniqueVisitorsSlot.contains(event.getRawSlot())) {
+            previousMove = false;
+            plugin.getMenus().openUniqueVisitors(superiorPlayer, this, island);
+        } else if (targetPlayer != null) {
+            if (event.getClick().name().contains("RIGHT")) {
+                plugin.getCommands().dispatchSubCommand(superiorPlayer.asPlayer(), "invite", targetPlayer.getName());
+            } else if (event.getClick().name().contains("LEFT")) {
+                plugin.getCommands().dispatchSubCommand(superiorPlayer.asPlayer(), "expel", targetPlayer.getName());
+            }
+        }
+    }
+
+    @Override
+    protected ItemStack getObjectItem(ItemStack clickedItem, SuperiorPlayer superiorPlayer) {
+        try {
+            Island island = superiorPlayer.getIsland();
+            String islandOwner = island != null ? island.getOwner().getName() : "None";
+            String islandName = island != null ? island.getName().isEmpty() ? islandOwner : island.getName() : "None";
+            return new ItemBuilder(clickedItem)
+                    .replaceAll("{0}", superiorPlayer.getName())
+                    .replaceAll("{1}", islandOwner)
+                    .replaceAll("{2}", islandName)
+                    .asSkullOf(superiorPlayer).build(superiorPlayer);
+        } catch (Exception ex) {
+            SuperiorSkyblockPlugin.log("Failed to load menu because of player: " + superiorPlayer.getName());
+            PluginDebugger.debug(ex);
+            throw ex;
+        }
+    }
+
+    @Override
+    protected List<SuperiorPlayer> requestObjects() {
+        return island.getIslandVisitors(false);
+    }
+
+    @Override
+    public void cloneAndOpen(ISuperiorMenu previousMenu) {
+        openInventory(superiorPlayer, previousMenu, island);
     }
 
 }

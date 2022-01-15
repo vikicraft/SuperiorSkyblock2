@@ -7,7 +7,7 @@ import com.bgsoftware.superiorskyblock.api.enums.HitActionResult;
 import com.bgsoftware.superiorskyblock.api.island.Island;
 import com.bgsoftware.superiorskyblock.api.island.IslandPrivilege;
 import com.bgsoftware.superiorskyblock.api.island.PlayerRole;
-import com.bgsoftware.superiorskyblock.api.missions.Mission;
+import com.bgsoftware.superiorskyblock.api.missions.IMissionsHolder;
 import org.bukkit.Location;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.World;
@@ -15,15 +15,12 @@ import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitTask;
 
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.UUID;
 import java.util.function.Consumer;
 
-public interface SuperiorPlayer {
+public interface SuperiorPlayer extends IMissionsHolder {
 
     /*
      *   General Methods
@@ -46,6 +43,7 @@ public interface SuperiorPlayer {
 
     /**
      * Set the skin-texture value for the player.
+     *
      * @param textureValue The skin texture.
      */
     void setTextureValue(String textureValue);
@@ -109,6 +107,7 @@ public interface SuperiorPlayer {
 
     /**
      * Checks whether the player is shown as online.
+     *
      * @return false if vanished, in spectator mode or offline.
      */
     boolean isShownAsOnline();
@@ -133,7 +132,7 @@ public interface SuperiorPlayer {
 
     /**
      * Check whether or not this player can hit another player.
-     *
+     * <p>
      * Players cannot hit each other if one of the followings is true:
      * 1) They are inside an island that has pvp disabled.
      * 2) One of them has pvp warm-up.
@@ -166,25 +165,29 @@ public interface SuperiorPlayer {
 
     /**
      * Teleport the player to a location.
+     *
      * @param location The location to teleport the player to.
      */
     void teleport(Location location);
 
     /**
      * Teleport the player to a location.
-     * @param location The location to teleport the player to.
+     *
+     * @param location       The location to teleport the player to.
      * @param teleportResult The result of the teleportation process.
      */
     void teleport(Location location, @Nullable Consumer<Boolean> teleportResult);
 
     /**
      * Teleport the player to an island.
+     *
      * @param island The island to teleport the player to.
      */
     void teleport(Island island);
 
     /**
      * Teleport the player to an island.
+     *
      * @param island The island to teleport the player to.
      * @param result Consumer that will be ran when task is finished.
      */
@@ -208,8 +211,11 @@ public interface SuperiorPlayer {
     /**
      * Set the island owner of the player's island.
      * !Can cause issues if not used properly!
+     *
      * @param islandLeader The island owner's player.
+     * @deprecated see {@link #setIsland(Island)}
      */
+    @Deprecated
     void setIslandLeader(SuperiorPlayer islandLeader);
 
     /**
@@ -217,6 +223,15 @@ public interface SuperiorPlayer {
      */
     @Nullable
     Island getIsland();
+
+    /**
+     * Set the island of the player.
+     * !Can cause issues if not used properly!
+     *
+     * @param island The island to set the player to.
+     * @throws IllegalArgumentException if island doesn't contain player as a member.
+     */
+    void setIsland(Island island);
 
     /**
      * Check if this player is a member of an island.
@@ -230,6 +245,7 @@ public interface SuperiorPlayer {
 
     /**
      * Set the role of the player.
+     *
      * @param playerRole The role to give the player.
      */
     void setPlayerRole(PlayerRole playerRole);
@@ -240,14 +256,14 @@ public interface SuperiorPlayer {
     int getDisbands();
 
     /**
-     * Check whether or not the player has more disbands.
-     */
-    boolean hasDisbands();
-
-    /**
      * Check whether or not the player has a permission.
      */
     void setDisbands(int disbands);
+
+    /**
+     * Check whether or not the player has more disbands.
+     */
+    boolean hasDisbands();
 
     /*
      *   Preferences Methods
@@ -260,6 +276,7 @@ public interface SuperiorPlayer {
 
     /**
      * Set the locale of the player.
+     *
      * @param locale The locale to set.
      */
     void setUserLocale(Locale locale);
@@ -276,6 +293,7 @@ public interface SuperiorPlayer {
 
     /**
      * Update world border for this player.
+     *
      * @param island The island the player should see the border of.
      */
     void updateWorldBorder(@Nullable Island island);
@@ -357,6 +375,7 @@ public interface SuperiorPlayer {
 
     /**
      * Set the border color for the player.
+     *
      * @param borderColor The color to set.
      */
     void setBorderColor(BorderColor borderColor);
@@ -372,6 +391,7 @@ public interface SuperiorPlayer {
 
     /**
      * Set the first schematic position of the player.
+     *
      * @param block The block to change the position to.
      */
     void setSchematicPos1(@Nullable Block block);
@@ -383,63 +403,14 @@ public interface SuperiorPlayer {
 
     /**
      * Set the second schematic position of the player.
+     *
      * @param block The block to change the position to.
      */
     void setSchematicPos2(@Nullable Block block);
 
     /*
-     *   Missions Methods
-     */
-
-    /**
-     * Complete a mission.
-     * @param mission The mission to complete.
-     */
-    void completeMission(Mission<?> mission);
-
-    /**
-     * Reset a mission.
-     * @param mission The mission to reset.
-     */
-    void resetMission(Mission<?> mission);
-
-    /**
-     * Check whether the player has completed the mission before.
-     * @param mission The mission to check.
-     */
-    boolean hasCompletedMission(Mission<?> mission);
-
-    /**
-     * Check whether the player can complete a mission again.
-     * @param mission The mission to check.
-     */
-    boolean canCompleteMissionAgain(Mission<?> mission);
-
-    /**
-     * Get the amount of times mission was completed.
-     * @param mission The mission to check.
-     */
-    int getAmountMissionCompleted(Mission<?> mission);
-
-    /**
-     * Get the list of the completed missions of the player.
-     */
-    List<Mission<?>> getCompletedMissions();
-
-    /**
-     * Get all the completed missions with the amount of times they were completed.
-     */
-    Map<Mission<?>, Integer> getCompletedMissionsWithAmounts();
-
-    /*
      *   Data Methods
      */
-
-    /**
-     * Set immunity to PvP for this player.
-     * @param immunedToPvP Whether or not the player should be immuned to PvP.
-     */
-    void setImmunedToPvP(boolean immunedToPvP);
 
     /**
      * Whether the player is immuned to PvP or not.
@@ -447,11 +418,11 @@ public interface SuperiorPlayer {
     boolean isImmunedToPvP();
 
     /**
-     * Set whether or not the player has just left an island's area.
-     * If set to true, the player will not be able to escape islands.
-     * @param leavingFlag Whether or not the island has left an island's area.
+     * Set immunity to PvP for this player.
+     *
+     * @param immunedToPvP Whether or not the player should be immuned to PvP.
      */
-    void setLeavingFlag(boolean leavingFlag);
+    void setImmunedToPvP(boolean immunedToPvP);
 
     /**
      * Whether the player has just left an island's area or not.
@@ -459,11 +430,12 @@ public interface SuperiorPlayer {
     boolean isLeavingFlag();
 
     /**
-     * Set a teleportation task for the player.
-     * This is used for warmpups, etc.
-     * @param teleportTask The teleport task to set.
+     * Set whether or not the player has just left an island's area.
+     * If set to true, the player will not be able to escape islands.
+     *
+     * @param leavingFlag Whether or not the island has left an island's area.
      */
-    void setTeleportTask(@Nullable BukkitTask teleportTask);
+    void setLeavingFlag(boolean leavingFlag);
 
     /**
      * Get the current active teleport task of the player.
@@ -472,16 +444,25 @@ public interface SuperiorPlayer {
     BukkitTask getTeleportTask();
 
     /**
-     * Set whether or not the player is immuned to portals.
-     * If set to true, players will not be able to get teleported through portals.
-     * @param immuneToPortals Whether the player should be immuned or not.
+     * Set a teleportation task for the player.
+     * This is used for warmpups, etc.
+     *
+     * @param teleportTask The teleport task to set.
      */
-    void setImmunedToPortals(boolean immuneToPortals);
+    void setTeleportTask(@Nullable BukkitTask teleportTask);
 
     /**
      * Whether the player is immuned to portals or not.
      */
     boolean isImmunedToPortals();
+
+    /**
+     * Set whether or not the player is immuned to portals.
+     * If set to true, players will not be able to get teleported through portals.
+     *
+     * @param immuneToPortals Whether the player should be immuned or not.
+     */
+    void setImmunedToPortals(boolean immuneToPortals);
 
     /**
      * Merge another player into this object.
@@ -490,6 +471,7 @@ public interface SuperiorPlayer {
 
     /**
      * Get the data handler of the object.
+     *
      * @deprecated See getDatabaseBridge
      */
     @Deprecated

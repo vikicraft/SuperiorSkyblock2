@@ -39,6 +39,7 @@ import org.bukkit.World;
 import org.bukkit.entity.Arrow;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
+import org.bukkit.event.Cancellable;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -469,65 +470,6 @@ public final class PlayersListener implements Listener {
     @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
     public void onPlayerPortal(PlayerPortalEvent e){
         PortalsLogic.handlePlayerPortal(e.getPlayer(), e.getFrom(), e.getCause(), e);
-        handlePlayerPortal(e.getPlayer(), e.getFrom(), e.getCause(), e);
-    }
-
-    public void handlePlayerPortal(Player player, Location from, PlayerTeleportEvent.TeleportCause teleportCause, Cancellable cancellable) {
-        SuperiorPlayer superiorPlayer = plugin.getPlayers().getSuperiorPlayer(player);
-
-        if(superiorPlayer instanceof SuperiorNPCPlayer)
-            return;
-
-        Island island = plugin.getGrid().getIslandAt(from);
-
-        if(island == null || !plugin.getGrid().isIslandsWorld(from.getWorld()))
-            return;
-
-        if(cancellable != null)
-            cancellable.setCancelled(true);
-
-        World.Environment environment = teleportCause == PlayerTeleportEvent.TeleportCause.NETHER_PORTAL ?
-                World.Environment.NETHER : World.Environment.THE_END;
-
-        if(environment == superiorPlayer.getWorld().getEnvironment())
-            environment = World.Environment.NORMAL;
-
-        if(((SPlayerDataHandler) superiorPlayer.getDataHandler()).isImmunedToTeleport())
-            return;
-
-        if((environment == World.Environment.NETHER && !island.isNetherEnabled()) ||
-                (environment == World.Environment.THE_END && !island.isEndEnabled())){
-            if(!Locale.WORLD_NOT_UNLOCKED.isEmpty(superiorPlayer.getUserLocale()))
-                Locale.sendSchematicMessage(superiorPlayer, Locale.WORLD_NOT_UNLOCKED.getMessage(superiorPlayer.getUserLocale(), StringUtils.format(environment.name())));
-            return;
-        }
-
-        String envName = environment == World.Environment.NETHER ? "nether" : "the_end";
-        Location toTeleport = environment == World.Environment.NORMAL ? island.getTeleportLocation(environment) : getLocationNoException(island, environment);
-
-        if(toTeleport != null) {
-            if(environment != World.Environment.NORMAL && !island.wasSchematicGenerated(environment)){
-                String schematicName = island.getSchematicName();
-                if(schematicName.isEmpty())
-                    schematicName = plugin.getSchematics().getDefaultSchematic(environment);
-
-                Schematic schematic = plugin.getSchematics().getSchematic(schematicName + "_" + envName);
-                if(schematic != null) {
-                    schematic.pasteSchematic(island, island.getCenter(environment).getBlock().
-                            getRelative(BlockFace.DOWN).getLocation(), () -> handleTeleport(superiorPlayer, island,
-                            ((BaseSchematic) schematic).getTeleportLocation(toTeleport)), Throwable::printStackTrace);
-                    island.setSchematicGenerate(environment);
-                }
-                else{
-                    Locale.sendSchematicMessage(superiorPlayer, ChatColor.RED + "The server hasn't added a " + envName + " schematic. Please contact administrator to solve the problem. " +
-                            "The format for " + envName + " schematic is \"" + schematicName + "_" + envName + "\".");
-                }
-            }
-
-            else {
-                handleTeleport(superiorPlayer, island, toTeleport);
-            }
-        }
     }
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)

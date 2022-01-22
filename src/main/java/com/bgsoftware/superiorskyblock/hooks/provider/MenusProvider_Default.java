@@ -10,7 +10,9 @@ import com.bgsoftware.superiorskyblock.api.island.SortingType;
 import com.bgsoftware.superiorskyblock.api.island.warps.IslandWarp;
 import com.bgsoftware.superiorskyblock.api.island.warps.WarpCategory;
 import com.bgsoftware.superiorskyblock.api.menu.ISuperiorMenu;
+import com.bgsoftware.superiorskyblock.api.missions.MissionCategory;
 import com.bgsoftware.superiorskyblock.api.wrappers.SuperiorPlayer;
+import com.bgsoftware.superiorskyblock.handler.HandlerLoadException;
 import com.bgsoftware.superiorskyblock.menu.SuperiorMenuBlank;
 import com.bgsoftware.superiorskyblock.menu.SuperiorMenuCustom;
 import com.bgsoftware.superiorskyblock.menu.SuperiorMenuSettings;
@@ -28,16 +30,15 @@ import com.bgsoftware.superiorskyblock.menu.impl.MenuGlobalWarps;
 import com.bgsoftware.superiorskyblock.menu.impl.MenuIslandBank;
 import com.bgsoftware.superiorskyblock.menu.impl.MenuIslandChest;
 import com.bgsoftware.superiorskyblock.menu.impl.MenuIslandCreation;
-import com.bgsoftware.superiorskyblock.menu.impl.MenuIslandMissions;
 import com.bgsoftware.superiorskyblock.menu.impl.MenuIslandRate;
 import com.bgsoftware.superiorskyblock.menu.impl.MenuIslandRatings;
 import com.bgsoftware.superiorskyblock.menu.impl.MenuMemberManage;
 import com.bgsoftware.superiorskyblock.menu.impl.MenuMemberRole;
 import com.bgsoftware.superiorskyblock.menu.impl.MenuMembers;
 import com.bgsoftware.superiorskyblock.menu.impl.MenuMissions;
+import com.bgsoftware.superiorskyblock.menu.impl.MenuMissionsCategory;
 import com.bgsoftware.superiorskyblock.menu.impl.MenuPermissions;
 import com.bgsoftware.superiorskyblock.menu.impl.MenuPlayerLanguage;
-import com.bgsoftware.superiorskyblock.menu.impl.MenuPlayerMissions;
 import com.bgsoftware.superiorskyblock.menu.impl.MenuSettings;
 import com.bgsoftware.superiorskyblock.menu.impl.MenuTopIslands;
 import com.bgsoftware.superiorskyblock.menu.impl.MenuUniqueVisitors;
@@ -50,7 +51,7 @@ import com.bgsoftware.superiorskyblock.menu.impl.MenuWarpCategoryManage;
 import com.bgsoftware.superiorskyblock.menu.impl.MenuWarpIconEdit;
 import com.bgsoftware.superiorskyblock.menu.impl.MenuWarpManage;
 import com.bgsoftware.superiorskyblock.menu.impl.MenuWarps;
-import com.bgsoftware.superiorskyblock.handler.HandlerLoadException;
+import com.bgsoftware.superiorskyblock.utils.debug.PluginDebugger;
 import com.google.common.base.Preconditions;
 import org.jetbrains.annotations.Nullable;
 
@@ -62,6 +63,16 @@ public final class MenusProvider_Default implements MenusProvider {
 
     public MenusProvider_Default(SuperiorSkyblockPlugin plugin) {
         this.plugin = plugin;
+    }
+
+    private static void handleExceptions(Runnable runnable) {
+        try {
+            runnable.run();
+        } catch (Exception ex) {
+            HandlerLoadException handlerError = new HandlerLoadException(ex, HandlerLoadException.ErrorLevel.CONTINUE);
+            handlerError.printStackTrace();
+            PluginDebugger.debug(handlerError);
+        }
     }
 
     @Override
@@ -86,16 +97,15 @@ public final class MenusProvider_Default implements MenusProvider {
         handleExceptions(MenuIslandBank::init);
         handleExceptions(MenuIslandChest::init);
         handleExceptions(MenuIslandCreation::init);
-        handleExceptions(MenuIslandMissions::init);
         handleExceptions(MenuIslandRate::init);
         handleExceptions(MenuIslandRatings::init);
         handleExceptions(MenuMemberManage::init);
         handleExceptions(MenuMemberRole::init);
         handleExceptions(MenuMembers::init);
         handleExceptions(MenuMissions::init);
+        handleExceptions(MenuMissionsCategory::init);
         handleExceptions(MenuPermissions::init);
         handleExceptions(MenuPlayerLanguage::init);
-        handleExceptions(MenuPlayerMissions::init);
         handleExceptions(MenuSettings::init);
         handleExceptions(MenuTopIslands::init);
         handleExceptions(MenuUniqueVisitors::init);
@@ -329,6 +339,19 @@ public final class MenusProvider_Default implements MenusProvider {
     }
 
     @Override
+    public void openMissionsCategory(SuperiorPlayer targetPlayer, @Nullable ISuperiorMenu previousMenu, MissionCategory missionCategory) {
+        Preconditions.checkNotNull(targetPlayer, "targetPlayer parameter cannot be null.");
+        Preconditions.checkNotNull(missionCategory, "missionCategory parameter cannot be null.");
+        MenuMissionsCategory.openInventory(targetPlayer, previousMenu, missionCategory);
+    }
+
+    @Override
+    public void refreshMissionsCategory(MissionCategory missionCategory) {
+        Preconditions.checkNotNull(missionCategory, "missionCategory parameter cannot be null.");
+        MenuMissionsCategory.refreshMenus(missionCategory);
+    }
+
+    @Override
     public void openPermissions(SuperiorPlayer targetPlayer, @Nullable ISuperiorMenu previousMenu, Island targetIsland, SuperiorPlayer permissiblePlayer) {
         Preconditions.checkNotNull(targetPlayer, "targetPlayer parameter cannot be null.");
         Preconditions.checkNotNull(targetIsland, "targetIsland parameter cannot be null.");
@@ -536,14 +559,6 @@ public final class MenusProvider_Default implements MenusProvider {
     public void destroyWarps(WarpCategory warpCategory) {
         Preconditions.checkNotNull(warpCategory, "warpCategory parameter cannot be null.");
         MenuWarps.destroyMenus(warpCategory);
-    }
-
-    private static void handleExceptions(Runnable runnable) {
-        try {
-            runnable.run();
-        } catch (Exception ex) {
-            new HandlerLoadException(ex, HandlerLoadException.ErrorLevel.CONTINUE).printStackTrace();
-        }
     }
 
 }

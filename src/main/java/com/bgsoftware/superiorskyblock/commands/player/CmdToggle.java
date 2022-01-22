@@ -1,10 +1,10 @@
 package com.bgsoftware.superiorskyblock.commands.player;
 
+import com.bgsoftware.superiorskyblock.lang.Message;
 import com.bgsoftware.superiorskyblock.SuperiorSkyblockPlugin;
 import com.bgsoftware.superiorskyblock.api.wrappers.SuperiorPlayer;
-import com.bgsoftware.superiorskyblock.Locale;
-import com.bgsoftware.superiorskyblock.commands.ISuperiorCommand;
 import com.bgsoftware.superiorskyblock.commands.CommandTabCompletes;
+import com.bgsoftware.superiorskyblock.commands.ISuperiorCommand;
 import org.bukkit.command.CommandSender;
 
 import java.util.ArrayList;
@@ -30,7 +30,7 @@ public final class CmdToggle implements ISuperiorCommand {
 
     @Override
     public String getDescription(java.util.Locale locale) {
-        return Locale.COMMAND_DESCRIPTION_TOGGLE.getMessage(locale);
+        return Message.COMMAND_DESCRIPTION_TOGGLE.getMessage(locale);
     }
 
     @Override
@@ -52,39 +52,35 @@ public final class CmdToggle implements ISuperiorCommand {
     public void execute(SuperiorSkyblockPlugin plugin, CommandSender sender, String[] args) {
         SuperiorPlayer superiorPlayer = plugin.getPlayers().getSuperiorPlayer(sender);
 
-        if(args[1].equalsIgnoreCase("border")) {
-            if(!sender.hasPermission("superior.island.toggle.border")){
-                Locale.NO_COMMAND_PERMISSION.send(sender);
+        if (args[1].equalsIgnoreCase("border")) {
+            if (!sender.hasPermission("superior.island.toggle.border")) {
+                Message.NO_COMMAND_PERMISSION.send(sender);
                 return;
             }
 
             if (superiorPlayer.hasWorldBorderEnabled()) {
-                Locale.TOGGLED_WORLD_BORDER_OFF.send(superiorPlayer);
+                Message.TOGGLED_WORLD_BORDER_OFF.send(superiorPlayer);
             } else {
-                Locale.TOGGLED_WORLD_BORDER_ON.send(superiorPlayer);
+                Message.TOGGLED_WORLD_BORDER_ON.send(superiorPlayer);
             }
 
             superiorPlayer.toggleWorldBorder();
             superiorPlayer.updateWorldBorder(plugin.getGrid().getIslandAt(superiorPlayer.getLocation()));
-        }
-
-        else if(args[1].equalsIgnoreCase("blocks")){
-            if(!sender.hasPermission("superior.island.toggle.blocks")){
-                Locale.NO_COMMAND_PERMISSION.send(sender);
+        } else if (args[1].equalsIgnoreCase("blocks")) {
+            if (!sender.hasPermission("superior.island.toggle.blocks")) {
+                Message.NO_COMMAND_PERMISSION.send(sender);
                 return;
             }
 
-            if(superiorPlayer.hasBlocksStackerEnabled()){
-                Locale.TOGGLED_STACKED_BLOCKS_OFF.send(superiorPlayer);
-            } else{
-                Locale.TOGGLED_STACKED_BLOCKS_ON.send(superiorPlayer);
+            if (superiorPlayer.hasBlocksStackerEnabled()) {
+                Message.TOGGLED_STACKED_BLOCKS_OFF.send(superiorPlayer);
+            } else {
+                Message.TOGGLED_STACKED_BLOCKS_ON.send(superiorPlayer);
             }
 
             superiorPlayer.toggleBlocksStacker();
-        }
-
-        else{
-            Locale.INVALID_TOGGLE_MODE.send(superiorPlayer, args[1]);
+        } else {
+            Message.INVALID_TOGGLE_MODE.send(superiorPlayer, args[1]);
         }
 
     }
@@ -92,7 +88,7 @@ public final class CmdToggle implements ISuperiorCommand {
     @Override
     public List<String> tabComplete(SuperiorSkyblockPlugin plugin, CommandSender sender, String[] args) {
         return args.length == 2 ? CommandTabCompletes.getCustomComplete(args[1], var ->
-                        sender.hasPermission("superior.island.toggle." + var), "border", "blocks") : new ArrayList<>();
+                sender.hasPermission("superior.island.toggle." + var), "border", "blocks") : new ArrayList<>();
     }
 
 }

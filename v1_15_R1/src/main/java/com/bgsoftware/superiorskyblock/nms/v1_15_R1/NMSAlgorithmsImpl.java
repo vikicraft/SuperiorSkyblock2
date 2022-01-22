@@ -1,10 +1,10 @@
 package com.bgsoftware.superiorskyblock.nms.v1_15_R1;
 
 import com.bgsoftware.superiorskyblock.SuperiorSkyblockPlugin;
+import com.bgsoftware.superiorskyblock.key.Key;
 import com.bgsoftware.superiorskyblock.nms.NMSAlgorithms;
 import com.bgsoftware.superiorskyblock.nms.v1_15_R1.algorithms.CustomTileEntityHopper;
 import com.bgsoftware.superiorskyblock.nms.v1_15_R1.algorithms.GlowEnchantment;
-import com.bgsoftware.superiorskyblock.key.Key;
 import net.minecraft.server.v1_15_R1.Block;
 import net.minecraft.server.v1_15_R1.BlockPosition;
 import net.minecraft.server.v1_15_R1.IBlockData;
@@ -20,6 +20,7 @@ import org.bukkit.craftbukkit.v1_15_R1.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.v1_15_R1.util.CraftChatMessage;
 import org.bukkit.craftbukkit.v1_15_R1.util.CraftMagicNumbers;
 import org.bukkit.enchantments.Enchantment;
+import org.bukkit.entity.FallingBlock;
 import org.bukkit.entity.Minecart;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.inventory.InventoryHolder;
@@ -30,6 +31,11 @@ import org.bukkit.potion.PotionEffect;
 public final class NMSAlgorithmsImpl implements NMSAlgorithms {
 
     private static final SuperiorSkyblockPlugin plugin = SuperiorSkyblockPlugin.getPlugin();
+
+    @Override
+    public void registerCommand(BukkitCommand command) {
+        ((CraftServer) plugin.getServer()).getCommandMap().register("superiorskyblock2", command);
+    }
 
     @Override
     public String parseSignLine(String original) {
@@ -68,8 +74,8 @@ public final class NMSAlgorithmsImpl implements NMSAlgorithms {
     }
 
     @Override
-    public void registerCommand(BukkitCommand command) {
-        ((CraftServer) plugin.getServer()).getCommandMap().register("superiorskyblock2", command);
+    public Key getFallingBlockType(FallingBlock fallingBlock) {
+        return Key.of(fallingBlock.getBlockData().getMaterial(), (byte) 0);
     }
 
     @Override

@@ -1,16 +1,16 @@
 package com.bgsoftware.superiorskyblock.commands.admin;
 
-import com.bgsoftware.superiorskyblock.Locale;
+import com.bgsoftware.superiorskyblock.lang.Message;
 import com.bgsoftware.superiorskyblock.SuperiorSkyblockPlugin;
 import com.bgsoftware.superiorskyblock.api.island.Island;
 import com.bgsoftware.superiorskyblock.api.objects.Pair;
 import com.bgsoftware.superiorskyblock.api.wrappers.SuperiorPlayer;
-import com.bgsoftware.superiorskyblock.commands.IAdminIslandCommand;
-import com.bgsoftware.superiorskyblock.utils.StringUtils;
 import com.bgsoftware.superiorskyblock.commands.CommandArguments;
 import com.bgsoftware.superiorskyblock.commands.CommandTabCompletes;
+import com.bgsoftware.superiorskyblock.commands.IAdminIslandCommand;
 import com.bgsoftware.superiorskyblock.key.Key;
-import com.bgsoftware.superiorskyblock.utils.threads.Executor;
+import com.bgsoftware.superiorskyblock.utils.StringUtils;
+import com.bgsoftware.superiorskyblock.threads.Executor;
 import org.bukkit.command.CommandSender;
 
 import java.util.ArrayList;
@@ -32,16 +32,16 @@ public final class CmdAdminSetEntityLimit implements IAdminIslandCommand {
     @Override
     public String getUsage(java.util.Locale locale) {
         return "admin setentitylimit <" +
-                Locale.COMMAND_ARGUMENT_PLAYER_NAME.getMessage(locale) + "/" +
-                Locale.COMMAND_ARGUMENT_ISLAND_NAME.getMessage(locale) + "/" +
-                Locale.COMMAND_ARGUMENT_ALL_ISLANDS.getMessage(locale) + "> <" +
-                Locale.COMMAND_ARGUMENT_ENTITY.getMessage(locale) + "> <" +
-                Locale.COMMAND_ARGUMENT_LIMIT.getMessage(locale) + ">";
+                Message.COMMAND_ARGUMENT_PLAYER_NAME.getMessage(locale) + "/" +
+                Message.COMMAND_ARGUMENT_ISLAND_NAME.getMessage(locale) + "/" +
+                Message.COMMAND_ARGUMENT_ALL_ISLANDS.getMessage(locale) + "> <" +
+                Message.COMMAND_ARGUMENT_ENTITY.getMessage(locale) + "> <" +
+                Message.COMMAND_ARGUMENT_LIMIT.getMessage(locale) + ">";
     }
 
     @Override
     public String getDescription(java.util.Locale locale) {
-        return Locale.COMMAND_DESCRIPTION_ADMIN_SET_ENTITY_LIMIT.getMessage(locale);
+        return Message.COMMAND_DESCRIPTION_ADMIN_SET_ENTITY_LIMIT.getMessage(locale);
     }
 
     @Override
@@ -70,19 +70,19 @@ public final class CmdAdminSetEntityLimit implements IAdminIslandCommand {
 
         Pair<Integer, Boolean> arguments = CommandArguments.getLimit(sender, args[4]);
 
-        if(!arguments.getValue())
+        if (!arguments.getValue())
             return;
 
         int limit = arguments.getKey();
 
         Executor.data(() -> islands.forEach(island -> island.setEntityLimit(entityKey, limit)));
 
-        if(islands.size() > 1)
-            Locale.CHANGED_ENTITY_LIMIT_ALL.send(sender, StringUtils.format(entityKey.getGlobalKey()));
-        else if(targetPlayer == null)
-            Locale.CHANGED_ENTITY_LIMIT_NAME.send(sender, StringUtils.format(entityKey.getGlobalKey()), islands.get(0).getName());
+        if (islands.size() > 1)
+            Message.CHANGED_ENTITY_LIMIT_ALL.send(sender, StringUtils.format(entityKey.getGlobalKey()));
+        else if (targetPlayer == null)
+            Message.CHANGED_ENTITY_LIMIT_NAME.send(sender, StringUtils.format(entityKey.getGlobalKey()), islands.get(0).getName());
         else
-            Locale.CHANGED_ENTITY_LIMIT.send(sender, StringUtils.format(entityKey.getGlobalKey()), targetPlayer.getName());
+            Message.CHANGED_ENTITY_LIMIT.send(sender, StringUtils.format(entityKey.getGlobalKey()), targetPlayer.getName());
     }
 
     @Override

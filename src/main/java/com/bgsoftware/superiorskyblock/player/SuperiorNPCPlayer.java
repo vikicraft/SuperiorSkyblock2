@@ -14,6 +14,7 @@ import com.bgsoftware.superiorskyblock.api.wrappers.SuperiorPlayer;
 import com.bgsoftware.superiorskyblock.database.EmptyDataHandler;
 import com.bgsoftware.superiorskyblock.database.bridge.EmptyDatabaseBridge;
 import com.bgsoftware.superiorskyblock.island.SPlayerRole;
+import com.bgsoftware.superiorskyblock.lang.PlayerLocales;
 import com.bgsoftware.superiorskyblock.utils.teleport.TeleportUtils;
 import org.bukkit.Location;
 import org.bukkit.OfflinePlayer;
@@ -39,7 +40,7 @@ public final class SuperiorNPCPlayer implements SuperiorPlayer {
 
     private final Entity npc;
 
-    public SuperiorNPCPlayer(Entity npc){
+    public SuperiorNPCPlayer(Entity npc) {
         this.npc = npc;
     }
 
@@ -189,6 +190,11 @@ public final class SuperiorNPCPlayer implements SuperiorPlayer {
     }
 
     @Override
+    public void setIsland(Island island) {
+
+    }
+
+    @Override
     public boolean hasIsland() {
         return false;
     }
@@ -209,18 +215,18 @@ public final class SuperiorNPCPlayer implements SuperiorPlayer {
     }
 
     @Override
-    public boolean hasDisbands() {
-        return false;
-    }
-
-    @Override
     public void setDisbands(int disbands) {
 
     }
 
     @Override
+    public boolean hasDisbands() {
+        return false;
+    }
+
+    @Override
     public Locale getUserLocale() {
-        return com.bgsoftware.superiorskyblock.Locale.getDefaultLocale();
+        return PlayerLocales.getDefaultLocale();
     }
 
     @Override
@@ -344,6 +350,63 @@ public final class SuperiorNPCPlayer implements SuperiorPlayer {
     }
 
     @Override
+    public boolean isImmunedToPvP() {
+        return false;
+    }
+
+    @Override
+    public void setImmunedToPvP(boolean immunedToPvP) {
+
+    }
+
+    @Override
+    public boolean isLeavingFlag() {
+        return false;
+    }
+
+    @Override
+    public void setLeavingFlag(boolean leavingFlag) {
+
+    }
+
+    @Nullable
+    @Override
+    public BukkitTask getTeleportTask() {
+        return null;
+    }
+
+    @Override
+    public void setTeleportTask(@Nullable BukkitTask teleportTask) {
+
+    }
+
+    @Override
+    public boolean isImmunedToPortals() {
+        return false;
+    }
+
+    @Override
+    public void setImmunedToPortals(boolean immuneToPortals) {
+
+    }
+
+    @Override
+    public void merge(SuperiorPlayer other) {
+
+    }
+
+    @Override
+    @Deprecated
+    public PlayerDataHandler getDataHandler() {
+        return EmptyDataHandler.getInstance();
+    }
+
+    @Override
+    public DatabaseBridge getDatabaseBridge() {
+        return EmptyDatabaseBridge.getInstance();
+    }
+
+    @Override
     public void completeMission(Mission<?> mission) {
 
     }
@@ -376,62 +439,6 @@ public final class SuperiorNPCPlayer implements SuperiorPlayer {
     @Override
     public Map<Mission<?>, Integer> getCompletedMissionsWithAmounts() {
         return new HashMap<>();
-    }
-
-    @Override
-    public void setImmunedToPvP(boolean immunedToPvP) {
-
-    }
-
-    @Override
-    public boolean isImmunedToPvP() {
-        return false;
-    }
-
-    @Override
-    public void setLeavingFlag(boolean leavingFlag) {
-
-    }
-
-    @Override
-    public boolean isLeavingFlag() {
-        return false;
-    }
-
-    @Override
-    public void setTeleportTask(@Nullable BukkitTask teleportTask) {
-
-    }
-
-    @Nullable
-    @Override
-    public BukkitTask getTeleportTask() {
-        return null;
-    }
-
-    @Override
-    public void setImmunedToPortals(boolean immuneToPortals) {
-
-    }
-
-    @Override
-    public boolean isImmunedToPortals() {
-        return false;
-    }
-
-    @Override
-    public void merge(SuperiorPlayer other) {
-
-    }
-
-    @Override
-    public PlayerDataHandler getDataHandler() {
-        return EmptyDataHandler.getInstance();
-    }
-
-    @Override
-    public DatabaseBridge getDatabaseBridge() {
-        return EmptyDatabaseBridge.getInstance();
     }
 
 }

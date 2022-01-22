@@ -1,16 +1,16 @@
 package com.bgsoftware.superiorskyblock.commands.player;
 
-import com.bgsoftware.superiorskyblock.Locale;
+import com.bgsoftware.superiorskyblock.lang.Message;
 import com.bgsoftware.superiorskyblock.SuperiorSkyblockPlugin;
 import com.bgsoftware.superiorskyblock.api.events.IslandUncoopPlayerEvent;
 import com.bgsoftware.superiorskyblock.api.island.Island;
 import com.bgsoftware.superiorskyblock.api.island.IslandPrivilege;
 import com.bgsoftware.superiorskyblock.api.wrappers.SuperiorPlayer;
-import com.bgsoftware.superiorskyblock.commands.IPermissibleCommand;
 import com.bgsoftware.superiorskyblock.commands.CommandArguments;
 import com.bgsoftware.superiorskyblock.commands.CommandTabCompletes;
+import com.bgsoftware.superiorskyblock.commands.IPermissibleCommand;
 import com.bgsoftware.superiorskyblock.utils.events.EventsCaller;
-import com.bgsoftware.superiorskyblock.utils.islands.IslandPrivileges;
+import com.bgsoftware.superiorskyblock.island.permissions.IslandPrivileges;
 import com.bgsoftware.superiorskyblock.utils.islands.IslandUtils;
 
 import java.util.ArrayList;
@@ -31,12 +31,12 @@ public final class CmdUncoop implements IPermissibleCommand {
 
     @Override
     public String getUsage(java.util.Locale locale) {
-        return "uncoop <" + Locale.COMMAND_ARGUMENT_PLAYER_NAME.getMessage(locale) + ">";
+        return "uncoop <" + Message.COMMAND_ARGUMENT_PLAYER_NAME.getMessage(locale) + ">";
     }
 
     @Override
     public String getDescription(java.util.Locale locale) {
-        return Locale.COMMAND_DESCRIPTION_UNCOOP.getMessage(locale);
+        return Message.COMMAND_DESCRIPTION_UNCOOP.getMessage(locale);
     }
 
     @Override
@@ -60,33 +60,33 @@ public final class CmdUncoop implements IPermissibleCommand {
     }
 
     @Override
-    public Locale getPermissionLackMessage() {
-        return Locale.NO_UNCOOP_PERMISSION;
+    public Message getPermissionLackMessage() {
+        return Message.NO_UNCOOP_PERMISSION;
     }
 
     @Override
     public void execute(SuperiorSkyblockPlugin plugin, SuperiorPlayer superiorPlayer, Island island, String[] args) {
         SuperiorPlayer targetPlayer = CommandArguments.getPlayer(plugin, superiorPlayer, args[1]);
 
-        if(targetPlayer == null)
+        if (targetPlayer == null)
             return;
 
-        if(!island.isCoop(targetPlayer)){
-            Locale.PLAYER_NOT_COOP.send(superiorPlayer);
+        if (!island.isCoop(targetPlayer)) {
+            Message.PLAYER_NOT_COOP.send(superiorPlayer);
             return;
         }
 
-        if(!EventsCaller.callIslandUncoopPlayerEvent(island, superiorPlayer, targetPlayer, IslandUncoopPlayerEvent.UncoopReason.PLAYER))
+        if (!EventsCaller.callIslandUncoopPlayerEvent(island, superiorPlayer, targetPlayer, IslandUncoopPlayerEvent.UncoopReason.PLAYER))
             return;
 
         island.removeCoop(targetPlayer);
 
-        IslandUtils.sendMessage(island, Locale.UNCOOP_ANNOUNCEMENT, new ArrayList<>(), superiorPlayer.getName(), targetPlayer.getName());
+        IslandUtils.sendMessage(island, Message.UNCOOP_ANNOUNCEMENT, new ArrayList<>(), superiorPlayer.getName(), targetPlayer.getName());
 
-        if(island.getName().isEmpty())
-            Locale.LEFT_ISLAND_COOP.send(targetPlayer, superiorPlayer.getName());
+        if (island.getName().isEmpty())
+            Message.LEFT_ISLAND_COOP.send(targetPlayer, superiorPlayer.getName());
         else
-            Locale.LEFT_ISLAND_COOP_NAME.send(targetPlayer, island.getName());
+            Message.LEFT_ISLAND_COOP_NAME.send(targetPlayer, island.getName());
     }
 
     @Override

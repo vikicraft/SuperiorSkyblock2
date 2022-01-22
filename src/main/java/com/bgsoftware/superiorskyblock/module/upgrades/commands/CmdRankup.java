@@ -1,23 +1,23 @@
 package com.bgsoftware.superiorskyblock.module.upgrades.commands;
 
-import com.bgsoftware.superiorskyblock.Locale;
 import com.bgsoftware.superiorskyblock.SuperiorSkyblockPlugin;
 import com.bgsoftware.superiorskyblock.api.island.Island;
 import com.bgsoftware.superiorskyblock.api.island.IslandPrivilege;
 import com.bgsoftware.superiorskyblock.api.objects.Pair;
 import com.bgsoftware.superiorskyblock.api.upgrades.Upgrade;
-import com.bgsoftware.superiorskyblock.api.upgrades.cost.UpgradeCost;
 import com.bgsoftware.superiorskyblock.api.upgrades.UpgradeLevel;
+import com.bgsoftware.superiorskyblock.api.upgrades.cost.UpgradeCost;
 import com.bgsoftware.superiorskyblock.api.wrappers.SuperiorPlayer;
-import com.bgsoftware.superiorskyblock.commands.IPermissibleCommand;
-import com.bgsoftware.superiorskyblock.hooks.support.PlaceholderHook;
-import com.bgsoftware.superiorskyblock.upgrade.SUpgradeLevel;
-import com.bgsoftware.superiorskyblock.utils.StringUtils;
 import com.bgsoftware.superiorskyblock.commands.CommandArguments;
 import com.bgsoftware.superiorskyblock.commands.CommandTabCompletes;
+import com.bgsoftware.superiorskyblock.commands.IPermissibleCommand;
+import com.bgsoftware.superiorskyblock.hooks.support.PlaceholderHook;
+import com.bgsoftware.superiorskyblock.lang.Message;
+import com.bgsoftware.superiorskyblock.upgrade.SUpgradeLevel;
+import com.bgsoftware.superiorskyblock.utils.StringUtils;
 import com.bgsoftware.superiorskyblock.utils.events.EventResult;
 import com.bgsoftware.superiorskyblock.utils.events.EventsCaller;
-import com.bgsoftware.superiorskyblock.utils.islands.IslandPrivileges;
+import com.bgsoftware.superiorskyblock.island.permissions.IslandPrivileges;
 import com.bgsoftware.superiorskyblock.wrappers.SoundWrapper;
 import org.bukkit.Bukkit;
 
@@ -40,12 +40,12 @@ public final class CmdRankup implements IPermissibleCommand {
 
     @Override
     public String getUsage(java.util.Locale locale) {
-        return "rankup <" + Locale.COMMAND_ARGUMENT_UPGRADE_NAME.getMessage(locale) + ">";
+        return "rankup <" + Message.COMMAND_ARGUMENT_UPGRADE_NAME.getMessage(locale) + ">";
     }
 
     @Override
     public String getDescription(java.util.Locale locale) {
-        return Locale.COMMAND_DESCRIPTION_RANKUP.getMessage(locale);
+        return Message.COMMAND_DESCRIPTION_RANKUP.getMessage(locale);
     }
 
     @Override
@@ -69,39 +69,38 @@ public final class CmdRankup implements IPermissibleCommand {
     }
 
     @Override
-    public Locale getPermissionLackMessage() {
-        return Locale.NO_RANKUP_PERMISSION;
+    public Message getPermissionLackMessage() {
+        return Message.NO_RANKUP_PERMISSION;
     }
 
     @Override
     public void execute(SuperiorSkyblockPlugin plugin, SuperiorPlayer superiorPlayer, Island island, String[] args) {
         Upgrade upgrade = CommandArguments.getUpgrade(plugin, superiorPlayer, args[1]);
 
-        if(upgrade == null)
+        if (upgrade == null)
             return;
 
         UpgradeLevel upgradeLevel = island.getUpgradeLevel(upgrade), nextUpgradeLevel = upgrade.getUpgradeLevel(upgradeLevel.getLevel() + 1);
 
         String permission = nextUpgradeLevel == null ? "" : nextUpgradeLevel.getPermission();
 
-        if(!permission.isEmpty() && !superiorPlayer.hasPermission(permission)){
-            Locale.NO_UPGRADE_PERMISSION.send(superiorPlayer);
+        if (!permission.isEmpty() && !superiorPlayer.hasPermission(permission)) {
+            Message.NO_UPGRADE_PERMISSION.send(superiorPlayer);
             return;
         }
 
         boolean hasNextLevel;
 
-        if(island.hasActiveUpgradeCooldown()){
+        if (island.hasActiveUpgradeCooldown()) {
             long timeNow = System.currentTimeMillis(), lastUpgradeTime = island.getLastTimeUpgrade();
-            Locale.UPGRADE_COOLDOWN_FORMAT.send(superiorPlayer, StringUtils.formatTime(superiorPlayer.getUserLocale(),
+            Message.UPGRADE_COOLDOWN_FORMAT.send(superiorPlayer, StringUtils.formatTime(superiorPlayer.getUserLocale(),
                     lastUpgradeTime + plugin.getSettings().getUpgradeCooldown() - timeNow, TimeUnit.MILLISECONDS));
             hasNextLevel = false;
-        }
-        else {
+        } else {
             String requiredCheckFailure = nextUpgradeLevel == null ? "" : nextUpgradeLevel.checkRequirements(superiorPlayer);
 
             if (!requiredCheckFailure.isEmpty()) {
-                Locale.sendMessage(superiorPlayer, requiredCheckFailure, false);
+                Message.CUSTOM.send(superiorPlayer, requiredCheckFailure, false);
                 hasNextLevel = false;
             } else {
                 EventResult<Pair<List<String>, UpgradeCost>> event = EventsCaller.callIslandUpgradeEvent(superiorPlayer, island, upgrade.getName(), upgradeLevel.getCommands(), upgradeLevel.getCost());
@@ -111,7 +110,7 @@ public final class CmdRankup implements IPermissibleCommand {
                     hasNextLevel = false;
 
                 } else if (!upgradeCost.hasEnoughBalance(superiorPlayer)) {
-                    Locale.NOT_ENOUGH_MONEY_TO_UPGRADE.send(superiorPlayer);
+                    Message.NOT_ENOUGH_MONEY_TO_UPGRADE.send(superiorPlayer);
                     hasNextLevel = false;
 
                 } else {
@@ -132,7 +131,7 @@ public final class CmdRankup implements IPermissibleCommand {
         SUpgradeLevel.ItemData itemData = ((SUpgradeLevel) upgradeLevel).getItemData();
         SoundWrapper sound = hasNextLevel ? itemData.hasNextLevelSound : itemData.noNextLevelSound;
 
-        if(sound != null)
+        if (sound != null)
             superiorPlayer.runIfOnline(sound::playSound);
     }
 

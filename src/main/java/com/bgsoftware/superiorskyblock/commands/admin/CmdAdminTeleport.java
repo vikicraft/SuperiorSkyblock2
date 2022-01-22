@@ -1,12 +1,12 @@
 package com.bgsoftware.superiorskyblock.commands.admin;
 
-import com.bgsoftware.superiorskyblock.Locale;
+import com.bgsoftware.superiorskyblock.lang.Message;
 import com.bgsoftware.superiorskyblock.SuperiorSkyblockPlugin;
 import com.bgsoftware.superiorskyblock.api.island.Island;
 import com.bgsoftware.superiorskyblock.api.wrappers.SuperiorPlayer;
+import com.bgsoftware.superiorskyblock.commands.CommandTabCompletes;
 import com.bgsoftware.superiorskyblock.commands.IAdminIslandCommand;
 import com.bgsoftware.superiorskyblock.utils.logic.PortalsLogic;
-import com.bgsoftware.superiorskyblock.commands.CommandTabCompletes;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.command.CommandSender;
@@ -32,13 +32,13 @@ public final class CmdAdminTeleport implements IAdminIslandCommand {
     @Override
     public String getUsage(java.util.Locale locale) {
         return "admin teleport <" +
-                Locale.COMMAND_ARGUMENT_PLAYER_NAME.getMessage(locale) + "/" +
-                Locale.COMMAND_ARGUMENT_ISLAND_NAME.getMessage(locale) + "> [nether/the_end]";
+                Message.COMMAND_ARGUMENT_PLAYER_NAME.getMessage(locale) + "/" +
+                Message.COMMAND_ARGUMENT_ISLAND_NAME.getMessage(locale) + "> [nether/the_end]";
     }
 
     @Override
     public String getDescription(java.util.Locale locale) {
-        return Locale.COMMAND_DESCRIPTION_ADMIN_TELEPORT.getMessage(locale);
+        return Message.COMMAND_DESCRIPTION_ADMIN_TELEPORT.getMessage(locale);
     }
 
     @Override
@@ -68,8 +68,8 @@ public final class CmdAdminTeleport implements IAdminIslandCommand {
         World.Environment environment = args.length == 4 ? World.Environment.valueOf(args[3].toUpperCase()) :
                 plugin.getSettings().getWorlds().getDefaultWorld();
 
-        if(environment != plugin.getSettings().getWorlds().getDefaultWorld()){
-            if(!island.wasSchematicGenerated(environment)) {
+        if (environment != plugin.getSettings().getWorlds().getDefaultWorld()) {
+            if (!island.wasSchematicGenerated(environment)) {
                 PortalsLogic.handlePlayerPortal((Player) sender, ((Player) sender).getLocation(),
                         environment == World.Environment.NETHER ? PlayerTeleportEvent.TeleportCause.NETHER_PORTAL :
                                 PlayerTeleportEvent.TeleportCause.END_PORTAL, null);

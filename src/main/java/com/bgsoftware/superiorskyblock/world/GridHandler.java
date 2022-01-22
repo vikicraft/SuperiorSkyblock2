@@ -1,6 +1,6 @@
 package com.bgsoftware.superiorskyblock.world;
 
-import com.bgsoftware.superiorskyblock.Locale;
+import com.bgsoftware.superiorskyblock.lang.Message;
 import com.bgsoftware.superiorskyblock.SuperiorSkyblockPlugin;
 import com.bgsoftware.superiorskyblock.api.data.DatabaseBridge;
 import com.bgsoftware.superiorskyblock.api.handlers.GridManager;
@@ -20,13 +20,14 @@ import com.bgsoftware.superiorskyblock.menu.SuperiorMenu;
 import com.bgsoftware.superiorskyblock.schematic.BaseSchematic;
 import com.bgsoftware.superiorskyblock.utils.LocationUtils;
 import com.bgsoftware.superiorskyblock.utils.StringUtils;
-import com.bgsoftware.superiorskyblock.utils.chat.PlayerChat;
-import com.bgsoftware.superiorskyblock.utils.chunks.ChunkPosition;
-import com.bgsoftware.superiorskyblock.utils.chunks.ChunksTracker;
+import com.bgsoftware.superiorskyblock.player.chat.PlayerChat;
+import com.bgsoftware.superiorskyblock.utils.debug.PluginDebugger;
+import com.bgsoftware.superiorskyblock.world.chunks.ChunkPosition;
+import com.bgsoftware.superiorskyblock.world.chunks.ChunksTracker;
 import com.bgsoftware.superiorskyblock.utils.events.EventResult;
 import com.bgsoftware.superiorskyblock.utils.events.EventsCaller;
 import com.bgsoftware.superiorskyblock.utils.islands.IslandUtils;
-import com.bgsoftware.superiorskyblock.utils.threads.Executor;
+import com.bgsoftware.superiorskyblock.threads.Executor;
 import com.bgsoftware.superiorskyblock.world.preview.IslandPreviews;
 import com.bgsoftware.superiorskyblock.world.purge.IslandsPurger;
 import com.bgsoftware.superiorskyblock.wrappers.SBlockPosition;
@@ -60,7 +61,7 @@ public final class GridHandler extends AbstractHandler implements GridManager {
     private final IslandsPurger islandsPurger;
     private final IslandPreviews islandPreviews;
     private final IslandsContainer islandsContainer;
-    private final DatabaseBridge databaseBridge;
+    private DatabaseBridge databaseBridge;
 
     private SpawnIsland spawnIsland;
     private SBlockPosition lastIsland;
@@ -78,13 +79,13 @@ public final class GridHandler extends AbstractHandler implements GridManager {
         this.islandsPurger = islandsPurger;
         this.islandPreviews = islandPreviews;
         this.islandsContainer = islandsContainer;
-        this.databaseBridge = plugin.getFactory().createDatabaseBridge(this);
-        this.databaseBridge.startSavingData();
     }
 
     @Override
     public void loadData() {
-        lastIsland = SBlockPosition.of(plugin.getSettings().getWorlds().getWorldName(), 0, 100, 0);
+        initializeDatabaseBridge();
+
+        lastIsland = SBlockPosition.of(plugin.getSettings().getWorlds().getDefaultWorldName(), 0, 100, 0);
         Executor.sync(this::updateSpawn);
         Executor.timer(plugin.getNMSDragonFight()::tickBattles, 1L);
     }
@@ -137,7 +138,7 @@ public final class GridHandler extends AbstractHandler implements GridManager {
             return;
         }
 
-        SuperiorSkyblockPlugin.debug("Action: Create Island, Target: " + superiorPlayer.getName() + ", Schematic: " + schemName + ", Bonus Worth: " + bonusWorth + ", Bonus Level: " + bonusLevel + ", Biome: " + biome + ", Name: " + islandName + ", Offset: " + offset);
+        PluginDebugger.debug("Action: Create Island, Target: " + superiorPlayer.getName() + ", Schematic: " + schemName + ", Bonus Worth: " + bonusWorth + ", Bonus Level: " + bonusLevel + ", Biome: " + biome + ", Name: " + islandName + ", Offset: " + offset);
 
         // Removing any active previews for the player.
         boolean updateGamemode = this.islandPreviews.endIslandPreview(superiorPlayer) != null;
@@ -147,7 +148,7 @@ public final class GridHandler extends AbstractHandler implements GridManager {
 
         UUID islandUUID = generateIslandUUID();
 
-        Location islandLocation = plugin.getProviders().getNextLocation(
+        Location islandLocation = plugin.getProviders().getWorldsProvider().getNextLocation(
                 lastIsland.parse().clone(),
                 plugin.getSettings().getIslandHeight(),
                 plugin.getSettings().getMaxIslandSize(),
@@ -155,7 +156,7 @@ public final class GridHandler extends AbstractHandler implements GridManager {
                 islandUUID
         );
 
-        SuperiorSkyblockPlugin.debug("Action: Calculate Next Island, Location: " + LocationUtils.getLocation(islandLocation));
+        PluginDebugger.debug("Action: Calculate Next Island, Location: " + LocationUtils.getLocation(islandLocation));
 
         Island island = plugin.getFactory().createIsland(superiorPlayer, islandUUID, islandLocation.add(0.5, 0, 0.5), islandName, schemName);
         EventResult<Boolean> event = EventsCaller.callIslandCreateEvent(superiorPlayer, island, schemName);
@@ -182,7 +183,7 @@ public final class GridHandler extends AbstractHandler implements GridManager {
                 IslandsDatabaseBridge.insertIsland(island);
 
                 superiorPlayer.runIfOnline(player -> {
-                    Locale.CREATE_ISLAND.send(superiorPlayer, SBlockPosition.of(islandLocation), System.currentTimeMillis() - startTime);
+                    Message.CREATE_ISLAND.send(superiorPlayer, SBlockPosition.of(islandLocation), System.currentTimeMillis() - startTime);
                     if (event.getResult()) {
                         if (updateGamemode)
                             player.setGameMode(GameMode.SURVIVAL);
@@ -199,24 +200,17 @@ public final class GridHandler extends AbstractHandler implements GridManager {
                     }
                 });
 
-                plugin.getProviders().finishIslandCreation(islandLocation, superiorPlayer.getUniqueId(), islandUUID);
+                plugin.getProviders().getWorldsProvider().finishIslandCreation(islandLocation,
+                        superiorPlayer.getUniqueId(), islandUUID);
             }, ex -> {
                 pendingCreationTasks.remove(superiorPlayer.getUniqueId());
-                plugin.getProviders().finishIslandCreation(islandLocation, superiorPlayer.getUniqueId(), islandUUID);
+                plugin.getProviders().getWorldsProvider().finishIslandCreation(islandLocation,
+                        superiorPlayer.getUniqueId(), islandUUID);
                 ex.printStackTrace();
-                Locale.CREATE_ISLAND_FAILURE.send(superiorPlayer);
+                PluginDebugger.debug(ex);
+                Message.CREATE_ISLAND_FAILURE.send(superiorPlayer);
             });
         }
-    }
-
-    public UUID generateIslandUUID() {
-        UUID uuid;
-
-        do {
-            uuid = UUID.randomUUID();
-        } while (getIslandByUUID(uuid) != null || getIsland(uuid) != null);
-
-        return uuid;
     }
 
     @Override
@@ -237,7 +231,7 @@ public final class GridHandler extends AbstractHandler implements GridManager {
                 if (result) {
                     this.islandPreviews.startIslandPreview(new SIslandPreview(superiorPlayer, previewLocation, schemName, islandName));
                     Executor.ensureMain(() -> superiorPlayer.runIfOnline(player -> player.setGameMode(GameMode.SPECTATOR)));
-                    Locale.ISLAND_PREVIEW_START.send(superiorPlayer, schemName);
+                    Message.ISLAND_PREVIEW_START.send(superiorPlayer, schemName);
                 }
             });
         }
@@ -287,12 +281,12 @@ public final class GridHandler extends AbstractHandler implements GridManager {
     @Override
     public void deleteIsland(Island island) {
         Preconditions.checkNotNull(island, "island parameter cannot be null.");
-        SuperiorSkyblockPlugin.debug("Action: Disband Island, Island: " + island.getOwner().getName());
+        PluginDebugger.debug("Action: Disband Island, Island: " + island.getOwner().getName());
 
         island.getAllPlayersInside().forEach(superiorPlayer -> {
             SuperiorMenu.killMenu(superiorPlayer);
             superiorPlayer.teleport(plugin.getGrid().getSpawnIsland());
-            Locale.ISLAND_GOT_DELETED_WHILE_INSIDE.send(superiorPlayer);
+            Message.ISLAND_GOT_DELETED_WHILE_INSIDE.send(superiorPlayer);
         });
 
         this.islandsContainer.removeIsland(island);
@@ -316,6 +310,19 @@ public final class GridHandler extends AbstractHandler implements GridManager {
     }
 
     @Override
+    public Island getIsland(int index, SortingType sortingType) {
+        Preconditions.checkNotNull(sortingType, "sortingType parameter cannot be null.");
+        return this.islandsContainer.getIslandAtPosition(index, sortingType);
+    }
+
+    @Override
+    public int getIslandPosition(Island island, SortingType sortingType) {
+        Preconditions.checkNotNull(island, "island parameter cannot be null.");
+        Preconditions.checkNotNull(sortingType, "sortingType parameter cannot be null.");
+        return this.islandsContainer.getIslandPosition(island, sortingType);
+    }
+
+    @Override
     public Island getIsland(UUID uuid) {
         Preconditions.checkNotNull(uuid, "uuid parameter cannot be null.");
         return this.islandsContainer.getIslandByOwner(uuid);
@@ -332,19 +339,6 @@ public final class GridHandler extends AbstractHandler implements GridManager {
         Preconditions.checkNotNull(islandName, "islandName parameter cannot be null.");
         String inputName = StringUtils.stripColors(islandName);
         return getIslands().stream().filter(island -> island.getRawName().equalsIgnoreCase(inputName)).findFirst().orElse(null);
-    }
-
-    @Override
-    public Island getIsland(int index, SortingType sortingType) {
-        Preconditions.checkNotNull(sortingType, "sortingType parameter cannot be null.");
-        return this.islandsContainer.getIslandAtPosition(index, sortingType);
-    }
-
-    @Override
-    public int getIslandPosition(Island island, SortingType sortingType) {
-        Preconditions.checkNotNull(island, "island parameter cannot be null.");
-        Preconditions.checkNotNull(sortingType, "sortingType parameter cannot be null.");
-        return this.islandsContainer.getIslandPosition(island, sortingType);
     }
 
     @Override
@@ -385,38 +379,6 @@ public final class GridHandler extends AbstractHandler implements GridManager {
     }
 
     @Override
-    public SpawnIsland getSpawnIsland() {
-        if (spawnIsland == null)
-            updateSpawn();
-
-        return spawnIsland;
-    }
-
-    @Override
-    public World getIslandsWorld(Island island, World.Environment environment) {
-        Preconditions.checkNotNull(island, "island parameter cannot be null.");
-        Preconditions.checkNotNull(environment, "environment parameter cannot be null.");
-        return plugin.getProviders().getIslandsWorld(island, environment);
-    }
-
-    @Override
-    public boolean isIslandsWorld(World world) {
-        Preconditions.checkNotNull(world, "world parameter cannot be null.");
-        return customWorlds.contains(world.getUID()) || plugin.getProviders().isIslandsWorld(world);
-    }
-
-    @Override
-    public void registerIslandWorld(World world) {
-        Preconditions.checkNotNull(world, "world parameter cannot be null.");
-        customWorlds.add(world.getUID());
-    }
-
-    @Override
-    public List<World> getRegisteredWorlds() {
-        return customWorlds.stream().map(Bukkit::getWorld).collect(Collectors.toList());
-    }
-
-    @Override
     public void transferIsland(UUID oldOwner, UUID newOwner) {
         Preconditions.checkNotNull(oldOwner, "oldOwner parameter cannot be null.");
         Preconditions.checkNotNull(newOwner, "newOwner parameter cannot be null.");
@@ -438,13 +400,45 @@ public final class GridHandler extends AbstractHandler implements GridManager {
     public void sortIslands(SortingType sortingType, Runnable onFinish) {
         Preconditions.checkNotNull(sortingType, "sortingType parameter cannot be null.");
 
-        SuperiorSkyblockPlugin.debug("Action: Sort Islands, Sorting Type: " + sortingType.getName());
+        PluginDebugger.debug("Action: Sort Islands, Sorting Type: " + sortingType.getName());
 
         this.islandsContainer.sortIslands(sortingType, () -> {
             plugin.getMenus().refreshTopIslands(sortingType);
             if (onFinish != null)
                 onFinish.run();
         });
+    }
+
+    @Override
+    public SpawnIsland getSpawnIsland() {
+        if (spawnIsland == null)
+            updateSpawn();
+
+        return spawnIsland;
+    }
+
+    @Override
+    public World getIslandsWorld(Island island, World.Environment environment) {
+        Preconditions.checkNotNull(island, "island parameter cannot be null.");
+        Preconditions.checkNotNull(environment, "environment parameter cannot be null.");
+        return plugin.getProviders().getWorldsProvider().getIslandsWorld(island, environment);
+    }
+
+    @Override
+    public boolean isIslandsWorld(World world) {
+        Preconditions.checkNotNull(world, "world parameter cannot be null.");
+        return customWorlds.contains(world.getUID()) || plugin.getProviders().getWorldsProvider().isIslandsWorld(world);
+    }
+
+    @Override
+    public void registerIslandWorld(World world) {
+        Preconditions.checkNotNull(world, "world parameter cannot be null.");
+        customWorlds.add(world.getUID());
+    }
+
+    @Override
+    public List<World> getRegisteredWorlds() {
+        return customWorlds.stream().map(Bukkit::getWorld).collect(Collectors.toList());
     }
 
     @Override
@@ -497,7 +491,7 @@ public final class GridHandler extends AbstractHandler implements GridManager {
 
     @Override
     public void calcAllIslands(Runnable callback) {
-        SuperiorSkyblockPlugin.debug("Action: Calculate All Islands");
+        PluginDebugger.debug("Action: Calculate All Islands");
         List<Island> islands = new ArrayList<>();
 
         {
@@ -516,7 +510,7 @@ public final class GridHandler extends AbstractHandler implements GridManager {
     public void addIslandToPurge(Island island) {
         Preconditions.checkNotNull(island, "island parameter cannot be null.");
         Preconditions.checkNotNull(island.getOwner(), "island's owner cannot be null.");
-        SuperiorSkyblockPlugin.debug("Action: Purge Island, Island: " + island.getOwner().getName());
+        PluginDebugger.debug("Action: Purge Island, Island: " + island.getOwner().getName());
         this.islandsPurger.scheduleIslandPurge(island);
     }
 
@@ -524,7 +518,7 @@ public final class GridHandler extends AbstractHandler implements GridManager {
     public void removeIslandFromPurge(Island island) {
         Preconditions.checkNotNull(island, "island parameter cannot be null.");
         Preconditions.checkNotNull(island.getOwner(), "island's owner cannot be null.");
-        SuperiorSkyblockPlugin.debug("Action: Remove From Purge, Island: " + island.getOwner().getName());
+        PluginDebugger.debug("Action: Remove From Purge, Island: " + island.getOwner().getName());
         this.islandsPurger.unscheduleIslandPurge(island);
     }
 
@@ -543,7 +537,7 @@ public final class GridHandler extends AbstractHandler implements GridManager {
     @Override
     public void registerSortingType(SortingType sortingType) {
         Preconditions.checkNotNull(sortingType, "sortingType parameter cannot be null.");
-        SuperiorSkyblockPlugin.debug("Action: Register Sorting Type, Sorting Type: " + sortingType.getName());
+        PluginDebugger.debug("Action: Register Sorting Type, Sorting Type: " + sortingType.getName());
         this.islandsContainer.addSortingType(sortingType, true);
     }
 
@@ -585,15 +579,29 @@ public final class GridHandler extends AbstractHandler implements GridManager {
         return databaseBridge;
     }
 
+    public UUID generateIslandUUID() {
+        UUID uuid;
+
+        do {
+            uuid = UUID.randomUUID();
+        } while (getIslandByUUID(uuid) != null || getIsland(uuid) != null);
+
+        return uuid;
+    }
+
     public void disablePlugin() {
         this.pluginDisable = true;
         cancelAllIslandPreviews();
     }
 
+    public boolean wasPluginDisabled() {
+        return this.pluginDisable;
+    }
+
     public void loadGrid(DatabaseResult resultSet) {
         lastIsland = SBlockPosition.of(resultSet.getString("last_island"));
-        if (!lastIsland.getWorldName().equalsIgnoreCase(plugin.getSettings().getWorlds().getWorldName())) {
-            lastIsland = SBlockPosition.of(plugin.getSettings().getWorlds().getWorldName(),
+        if (!lastIsland.getWorldName().equalsIgnoreCase(plugin.getSettings().getWorlds().getDefaultWorldName())) {
+            lastIsland = SBlockPosition.of(plugin.getSettings().getWorlds().getDefaultWorldName(),
                     lastIsland.getX(), lastIsland.getY(), lastIsland.getZ());
         }
 
@@ -607,13 +615,14 @@ public final class GridHandler extends AbstractHandler implements GridManager {
                 plugin.getSettings().updateValue("max-island-size", maxIslandSize);
             }
 
-            if (!plugin.getSettings().getWorlds().getWorldName().equals(world)) {
+            if (!plugin.getSettings().getWorlds().getDefaultWorldName().equals(world)) {
                 SuperiorSkyblockPlugin.log("&cYou have changed the island-world value without deleting database.");
                 SuperiorSkyblockPlugin.log("&cRestoring it to the old value...");
                 plugin.getSettings().updateValue("worlds.normal-world", world);
             }
         } catch (IOException ex) {
             ex.printStackTrace();
+            PluginDebugger.debug(ex);
             Bukkit.shutdown();
         }
     }
@@ -638,9 +647,14 @@ public final class GridHandler extends AbstractHandler implements GridManager {
     }
 
     private void setLastIsland(SBlockPosition lastIsland) {
-        SuperiorSkyblockPlugin.debug("Action: Set Last Island, Location: " + lastIsland);
+        PluginDebugger.debug("Action: Set Last Island, Location: " + lastIsland);
         this.lastIsland = lastIsland;
         GridDatabaseBridge.saveLastIsland(this, lastIsland);
+    }
+
+    private void initializeDatabaseBridge() {
+        databaseBridge = plugin.getFactory().createDatabaseBridge(this);
+        databaseBridge.startSavingData();
     }
 
 }

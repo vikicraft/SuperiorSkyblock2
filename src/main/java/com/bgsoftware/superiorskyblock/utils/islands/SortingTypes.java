@@ -1,20 +1,32 @@
 package com.bgsoftware.superiorskyblock.utils.islands;
 
 import com.bgsoftware.superiorskyblock.SuperiorSkyblockPlugin;
+import com.bgsoftware.superiorskyblock.api.island.Island;
 import com.bgsoftware.superiorskyblock.api.island.SortingType;
+
+import java.util.Comparator;
 
 public final class SortingTypes {
 
-    private SortingTypes(){
+    public static final SortingType BY_WORTH = register("WORTH", SortingComparators.WORTH_COMPARATOR, false);
+    public static final SortingType BY_LEVEL = register("LEVEL", SortingComparators.LEVEL_COMPARATOR, false);
+    public static final SortingType BY_RATING = register("RATING", SortingComparators.RATING_COMPARATOR, false);
+    public static final SortingType BY_PLAYERS = register("PLAYERS", SortingComparators.PLAYERS_COMPARATOR, false);
+
+    private SortingTypes() {
 
     }
 
-    public static SortingType BY_WORTH = SortingType.getByName("WORTH");
-    public static SortingType BY_LEVEL = SortingType.getByName("LEVEL");
-    public static SortingType BY_RATING = SortingType.getByName("RATING");
-    public static SortingType BY_PLAYERS = SortingType.getByName("PLAYERS");
+    public static void registerSortingTypes() {
+        // Do nothing, only trigger all the register calls
+    }
 
-    public static SortingType getDefaultSorting(){
+    private static SortingType register(String name, Comparator<Island> comparator, boolean handleEqualsIslands) {
+        SortingType.register(name, comparator, handleEqualsIslands);
+        return SortingType.getByName(name);
+    }
+
+    public static SortingType getDefaultSorting() {
         return SortingType.getByName(SuperiorSkyblockPlugin.getPlugin().getSettings().getIslandTopOrder());
     }
 

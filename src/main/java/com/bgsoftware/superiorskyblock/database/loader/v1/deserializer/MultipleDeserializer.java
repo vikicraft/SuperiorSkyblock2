@@ -11,6 +11,7 @@ import com.bgsoftware.superiorskyblock.database.loader.v1.attributes.PlayerAttri
 import com.bgsoftware.superiorskyblock.database.loader.v1.attributes.WarpCategoryAttributes;
 import com.bgsoftware.superiorskyblock.island.permissions.PlayerPermissionNode;
 import com.bgsoftware.superiorskyblock.key.dataset.KeyMap;
+import com.bgsoftware.superiorskyblock.utils.debug.PluginDebugger;
 import org.bukkit.potion.PotionEffectType;
 
 import java.util.Arrays;
@@ -23,15 +24,17 @@ public final class MultipleDeserializer implements IDeserializer {
 
     private final List<IDeserializer> deserializers;
 
-    public MultipleDeserializer(IDeserializer... deserializers){
+    public MultipleDeserializer(IDeserializer... deserializers) {
         this.deserializers = Arrays.asList(deserializers);
     }
 
-    private <T> T runDeserializers(Function<IDeserializer, T> function){
-        for(IDeserializer deserializer : deserializers){
+    private <T> T runDeserializers(Function<IDeserializer, T> function) {
+        for (IDeserializer deserializer : deserializers) {
             try {
                 return function.apply(deserializer);
-            } catch (Exception ignored) {}
+            } catch (Exception error) {
+                PluginDebugger.debug(error);
+            }
         }
 
         throw new RuntimeException("No valid deserializer found.");
@@ -120,6 +123,16 @@ public final class MultipleDeserializer implements IDeserializer {
     @Override
     public List<WarpCategoryAttributes> deserializeWarpCategories(String categories) {
         return runDeserializers(deserializer -> deserializer.deserializeWarpCategories(categories));
+    }
+
+    @Override
+    public String deserializeBlockCounts(String blockCountsParam) {
+        return runDeserializers(deserializer -> deserializer.deserializeBlockCounts(blockCountsParam));
+    }
+
+    @Override
+    public String deserializeDirtyChunks(String dirtyChunksParam) {
+        return runDeserializers(deserializer -> deserializer.deserializeDirtyChunks(dirtyChunksParam));
     }
 
 }

@@ -6,6 +6,7 @@ import com.bgsoftware.superiorskyblock.api.SuperiorSkyblock;
 import com.bgsoftware.superiorskyblock.api.commands.SuperiorCommand;
 import com.bgsoftware.superiorskyblock.api.modules.PluginModule;
 import com.bgsoftware.superiorskyblock.utils.FileUtils;
+import com.bgsoftware.superiorskyblock.utils.debug.PluginDebugger;
 import org.bukkit.event.Listener;
 
 import java.io.File;
@@ -14,7 +15,7 @@ public abstract class BuiltinModule extends PluginModule {
 
     protected CommentedConfiguration config = null;
 
-    public BuiltinModule(String moduleName){
+    public BuiltinModule(String moduleName) {
         super(moduleName, "Ome_R");
     }
 
@@ -61,17 +62,18 @@ public abstract class BuiltinModule extends PluginModule {
             config.syncWithConfig(configFile,
                     FileUtils.getResource("modules/" + getName() + "/config.yml"),
                     getIgnoredSections());
-        }catch (Exception ex){
+        } catch (Exception ex) {
             ex.printStackTrace();
+            PluginDebugger.debug(ex);
         }
 
         updateConfig(plugin);
     }
 
-    public File createConfig(){
+    public File createConfig() {
         File configFile = new File(getDataFolder(), "config.yml");
 
-        if(!configFile.exists())
+        if (!configFile.exists())
             FileUtils.saveResource("modules/" + getName() + "/config.yml");
 
         return configFile;
@@ -91,7 +93,7 @@ public abstract class BuiltinModule extends PluginModule {
 
     protected abstract void updateConfig(SuperiorSkyblockPlugin plugin);
 
-    protected String[] getIgnoredSections(){
+    protected String[] getIgnoredSections() {
         return new String[0];
     }
 

@@ -1,13 +1,13 @@
 package com.bgsoftware.superiorskyblock.commands.admin;
 
-import com.bgsoftware.superiorskyblock.Locale;
+import com.bgsoftware.superiorskyblock.lang.Message;
 import com.bgsoftware.superiorskyblock.SuperiorSkyblockPlugin;
 import com.bgsoftware.superiorskyblock.api.island.Island;
 import com.bgsoftware.superiorskyblock.api.island.warps.IslandWarp;
 import com.bgsoftware.superiorskyblock.api.wrappers.SuperiorPlayer;
-import com.bgsoftware.superiorskyblock.commands.IAdminIslandCommand;
 import com.bgsoftware.superiorskyblock.commands.CommandArguments;
 import com.bgsoftware.superiorskyblock.commands.CommandTabCompletes;
+import com.bgsoftware.superiorskyblock.commands.IAdminIslandCommand;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.Sign;
@@ -33,14 +33,14 @@ public final class CmdAdminDelWarp implements IAdminIslandCommand {
     @Override
     public String getUsage(java.util.Locale locale) {
         return "admin delwarp <" +
-                Locale.COMMAND_ARGUMENT_PLAYER_NAME.getMessage(locale) + "/" +
-                Locale.COMMAND_ARGUMENT_ISLAND_NAME.getMessage(locale) + "> <" +
-                Locale.COMMAND_ARGUMENT_WARP_NAME.getMessage(locale) + "...>";
+                Message.COMMAND_ARGUMENT_PLAYER_NAME.getMessage(locale) + "/" +
+                Message.COMMAND_ARGUMENT_ISLAND_NAME.getMessage(locale) + "> <" +
+                Message.COMMAND_ARGUMENT_WARP_NAME.getMessage(locale) + "...>";
     }
 
     @Override
     public String getDescription(java.util.Locale locale) {
-        return Locale.COMMAND_DESCRIPTION_ADMIN_DEL_WARP.getMessage(locale);
+        return Message.COMMAND_DESCRIPTION_ADMIN_DEL_WARP.getMessage(locale);
     }
 
     @Override
@@ -67,13 +67,13 @@ public final class CmdAdminDelWarp implements IAdminIslandCommand {
     public void execute(SuperiorSkyblockPlugin plugin, CommandSender sender, SuperiorPlayer targetPlayer, Island island, String[] args) {
         IslandWarp islandWarp = CommandArguments.getWarp(sender, island, args, 3);
 
-        if(islandWarp == null)
+        if (islandWarp == null)
             return;
 
         boolean breakSign = false;
 
         Block signBlock = islandWarp.getLocation().getBlock();
-        if(signBlock.getState() instanceof Sign){
+        if (signBlock.getState() instanceof Sign) {
             signBlock.setType(Material.AIR);
             signBlock.getWorld().dropItemNaturally(signBlock.getLocation(), new ItemStack(Material.SIGN));
             breakSign = true;
@@ -81,10 +81,10 @@ public final class CmdAdminDelWarp implements IAdminIslandCommand {
 
         island.deleteWarp(islandWarp.getName());
 
-        Locale.DELETE_WARP.send(sender, islandWarp.getName());
+        Message.DELETE_WARP.send(sender, islandWarp.getName());
 
-        if(breakSign){
-            Locale.DELETE_WARP_SIGN_BROKE.send(sender);
+        if (breakSign) {
+            Message.DELETE_WARP_SIGN_BROKE.send(sender);
         }
     }
 

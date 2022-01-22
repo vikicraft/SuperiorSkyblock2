@@ -32,6 +32,8 @@ POSSIBILITY OF SUCH DAMAGE.
  */
 package com.bgsoftware.superiorskyblock.tag;
 
+import com.bgsoftware.superiorskyblock.SuperiorSkyblockPlugin;
+import com.bgsoftware.superiorskyblock.utils.debug.PluginDebugger;
 import com.google.common.base.Preconditions;
 
 import java.io.DataInputStream;
@@ -51,25 +53,26 @@ public final class ShortTag extends Tag<Short> {
         super(value, CLASS, short.class);
     }
 
-    @Override
-    protected void writeData(DataOutputStream os) throws IOException {
-        os.writeShort(value);
-    }
-
-    public static ShortTag fromNBT(Object tag){
+    public static ShortTag fromNBT(Object tag) {
         Preconditions.checkArgument(tag.getClass().equals(CLASS), "Cannot convert " + tag.getClass() + " to ShortTag!");
 
         try {
             short value = plugin.getNMSTags().getNBTShortValue(tag);
             return new ShortTag(value);
-        }catch(Exception ex){
+        } catch (Exception ex) {
             ex.printStackTrace();
+            PluginDebugger.debug(ex);
             return null;
         }
     }
 
-    public static ShortTag fromStream(DataInputStream is) throws IOException{
+    public static ShortTag fromStream(DataInputStream is) throws IOException {
         return new ShortTag(is.readShort());
+    }
+
+    @Override
+    protected void writeData(DataOutputStream os) throws IOException {
+        os.writeShort(value);
     }
 
 }

@@ -1,6 +1,6 @@
 package com.bgsoftware.superiorskyblock.module.upgrades.commands;
 
-import com.bgsoftware.superiorskyblock.Locale;
+import com.bgsoftware.superiorskyblock.lang.Message;
 import com.bgsoftware.superiorskyblock.SuperiorSkyblockPlugin;
 import com.bgsoftware.superiorskyblock.api.island.Island;
 import com.bgsoftware.superiorskyblock.api.wrappers.SuperiorPlayer;
@@ -25,15 +25,15 @@ public final class CmdAdminSyncUpgrades implements IAdminIslandCommand {
     @Override
     public String getUsage(java.util.Locale locale) {
         return "admin syncupgrades <" +
-                Locale.COMMAND_ARGUMENT_PLAYER_NAME.getMessage(locale) + "/" +
-                Locale.COMMAND_ARGUMENT_ISLAND_NAME.getMessage(locale) + "/" +
-                Locale.COMMAND_ARGUMENT_ALL_ISLANDS.getMessage(locale) + ">";
+                Message.COMMAND_ARGUMENT_PLAYER_NAME.getMessage(locale) + "/" +
+                Message.COMMAND_ARGUMENT_ISLAND_NAME.getMessage(locale) + "/" +
+                Message.COMMAND_ARGUMENT_ALL_ISLANDS.getMessage(locale) + ">";
 
     }
 
     @Override
     public String getDescription(java.util.Locale locale) {
-        return Locale.COMMAND_DESCRIPTION_ADMIN_SYNC_UPGRADES.getMessage(locale);
+        return Message.COMMAND_DESCRIPTION_ADMIN_SYNC_UPGRADES.getMessage(locale);
     }
 
     @Override
@@ -60,12 +60,12 @@ public final class CmdAdminSyncUpgrades implements IAdminIslandCommand {
     public void execute(SuperiorSkyblockPlugin plugin, CommandSender sender, SuperiorPlayer targetPlayer, List<Island> islands, String[] args) {
         islands.forEach(Island::syncUpgrades);
 
-        if(islands.size() > 1)
-            Locale.SYNC_UPGRADES_ALL.send(sender);
-        else if(targetPlayer == null)
-            Locale.SYNC_UPGRADES_NAME.send(sender, islands.get(0).getName());
+        if (islands.size() > 1)
+            Message.SYNC_UPGRADES_ALL.send(sender);
+        else if (targetPlayer == null)
+            Message.SYNC_UPGRADES_NAME.send(sender, islands.get(0).getName());
         else
-            Locale.SYNC_UPGRADES.send(sender, targetPlayer.getName());
+            Message.SYNC_UPGRADES.send(sender, targetPlayer.getName());
     }
 
 }

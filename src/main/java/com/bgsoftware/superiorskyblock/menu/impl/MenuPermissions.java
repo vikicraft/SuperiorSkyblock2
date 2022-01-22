@@ -1,7 +1,7 @@
 package com.bgsoftware.superiorskyblock.menu.impl;
 
 import com.bgsoftware.common.config.CommentedConfiguration;
-import com.bgsoftware.superiorskyblock.Locale;
+import com.bgsoftware.superiorskyblock.lang.Message;
 import com.bgsoftware.superiorskyblock.SuperiorSkyblockPlugin;
 import com.bgsoftware.superiorskyblock.api.island.Island;
 import com.bgsoftware.superiorskyblock.api.island.IslandPrivilege;
@@ -12,10 +12,12 @@ import com.bgsoftware.superiorskyblock.api.wrappers.SuperiorPlayer;
 import com.bgsoftware.superiorskyblock.island.SPlayerRole;
 import com.bgsoftware.superiorskyblock.menu.PagedSuperiorMenu;
 import com.bgsoftware.superiorskyblock.menu.SuperiorMenu;
+import com.bgsoftware.superiorskyblock.menu.converter.MenuConverter;
+import com.bgsoftware.superiorskyblock.menu.file.MenuPatternSlots;
 import com.bgsoftware.superiorskyblock.utils.FileUtils;
 import com.bgsoftware.superiorskyblock.utils.StringUtils;
+import com.bgsoftware.superiorskyblock.utils.debug.PluginDebugger;
 import com.bgsoftware.superiorskyblock.utils.items.ItemBuilder;
-import com.bgsoftware.superiorskyblock.menu.converter.MenuConverter;
 import com.bgsoftware.superiorskyblock.wrappers.SoundWrapper;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -29,7 +31,6 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 
 public final class MenuPermissions extends PagedSuperiorMenu<IslandPrivilege> {
 
@@ -39,12 +40,161 @@ public final class MenuPermissions extends PagedSuperiorMenu<IslandPrivilege> {
     private final Island island;
     private final Object permissionHolder;
 
-    private MenuPermissions(SuperiorPlayer superiorPlayer, Island island, Object permissionHolder){
+    private MenuPermissions(SuperiorPlayer superiorPlayer, Island island, Object permissionHolder) {
         super("menuPermissions", superiorPlayer);
         this.island = island;
         this.permissionHolder = permissionHolder;
-        if(permissionHolder instanceof SuperiorPlayer)
+        if (permissionHolder instanceof SuperiorPlayer)
             updateTargetPlayer((SuperiorPlayer) permissionHolder);
+    }
+
+    public static void init() {
+        MenuPermissions menuPermissions = new MenuPermissions(null, null, null);
+
+        File file = new File(plugin.getDataFolder(), "menus/permissions.yml");
+
+        if (!file.exists())
+            FileUtils.saveResource("menus/permissions.yml");
+
+        CommentedConfiguration cfg = CommentedConfiguration.loadConfiguration(file);
+
+        try {
+            cfg.syncWithConfig(file, FileUtils.getResource("menus/permissions.yml"), additionalMenuSections("permissions"));
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            PluginDebugger.debug(ex);
+        }
+
+        if (convertOldGUI(cfg)) {
+            try {
+                cfg.save(file);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                PluginDebugger.debug(ex);
+            }
+        }
+
+        noRolePermission = cfg.getString("messages.no-role-permission", "");
+        exactRolePermission = cfg.getString("messages.exact-role-permission", "");
+        higherRolePermission = cfg.getString("messages.higher-role-permission", "");
+
+        MenuPatternSlots menuPatternSlots = FileUtils.loadGUI(menuPermissions, "permissions.yml", cfg);
+
+        ConfigurationSection permissionsSection = cfg.getConfigurationSection("permissions");
+
+        islandPermissions.clear();
+        int position = 0;
+
+        for (String key : permissionsSection.getKeys(false)) {
+            if (permissionsSection.getBoolean(key + ".display-menu", false)) {
+                try {
+                    String permission = key.toLowerCase();
+                    updatePermission(IslandPrivilege.getByName(permission), cfg, position++);
+                } catch (Exception error) {
+                    PluginDebugger.debug(error);
+                }
+            }
+        }
+
+        menuPermissions.setPreviousSlot(getSlots(cfg, "previous-page", menuPatternSlots));
+        menuPermissions.setCurrentSlot(getSlots(cfg, "current-page", menuPatternSlots));
+        menuPermissions.setNextSlot(getSlots(cfg, "next-page", menuPatternSlots));
+        menuPermissions.setSlots(getSlots(cfg, "slots", menuPatternSlots));
+
+        menuPermissions.markCompleted();
+    }
+
+    public static void openInventory(SuperiorPlayer superiorPlayer, ISuperiorMenu previousMenu, Island island, Object permissionHolder) {
+        new MenuPermissions(superiorPlayer, island, permissionHolder).open(previousMenu);
+    }
+
+    public static void refreshMenus(Island island) {
+        SuperiorMenu.refreshMenus(MenuPermissions.class, superiorMenu -> superiorMenu.island.equals(island));
+    }
+
+    public static void refreshMenus(Island island, Object permissionHolder) {
+        SuperiorMenu.refreshMenus(MenuPermissions.class, superiorMenu -> superiorMenu.island.equals(island) &&
+                superiorMenu.permissionHolder.equals(permissionHolder));
+    }
+
+    public static void updatePermission(IslandPrivilege islandPrivilege) {
+        File file = new File(plugin.getDataFolder(), "menus/permissions.yml");
+        CommentedConfiguration cfg = CommentedConfiguration.loadConfiguration(file);
+        int position = 0;
+
+        for (String key : cfg.getConfigurationSection("permissions").getKeys(false)) {
+            if (islandPrivilege.getName().equalsIgnoreCase(key))
+                break;
+
+            position++;
+        }
+
+        updatePermission(islandPrivilege, cfg, position);
+    }
+
+    public static void updatePermission(IslandPrivilege islandPrivilege, YamlConfiguration cfg, int position) {
+        if (!islandPermissions.contains(islandPrivilege)) {
+            MenuPermissions menuPermissions = new MenuPermissions(null, null, null);
+            String permission = islandPrivilege.getName().toLowerCase();
+            if (cfg.contains("permissions." + permission)) {
+                ConfigurationSection permissionSection = cfg.getConfigurationSection("permissions." + permission);
+                menuPermissions.addData(permission + "-has-access-sound", FileUtils.getSound(permissionSection.getConfigurationSection("has-access.sound")));
+                menuPermissions.addData(permission + "-has-access-commands", cfg.getStringList("has-access.commands"));
+                menuPermissions.addData(permission + "-no-access-sound", FileUtils.getSound(permissionSection.getConfigurationSection("no-access.sound")));
+                menuPermissions.addData(permission + "-no-access-commands", cfg.getStringList("no-access.commands"));
+                menuPermissions.addData(permission + "-permission-enabled", FileUtils.getItemStack("permissions.yml", permissionSection.getConfigurationSection("permission-enabled")));
+                menuPermissions.addData(permission + "-permission-disabled", FileUtils.getItemStack("permissions.yml", permissionSection.getConfigurationSection("permission-disabled")));
+                if (permissionSection.contains("role-permission")) {
+                    menuPermissions.addData(permission + "-role-permission", FileUtils.getItemStack("permissions.yml", permissionSection.getConfigurationSection("role-permission")));
+                }
+                if (position >= 0 && position < islandPermissions.size())
+                    islandPermissions.add(position, islandPrivilege);
+                else
+                    islandPermissions.add(islandPrivilege);
+            }
+        }
+    }
+
+    private static boolean convertOldGUI(YamlConfiguration newMenu) {
+        File oldFile = new File(plugin.getDataFolder(), "guis/permissions-gui.yml");
+
+        if (!oldFile.exists())
+            return false;
+
+        //We want to reset the items of newMenu.
+        ConfigurationSection itemsSection = newMenu.createSection("items");
+        ConfigurationSection soundsSection = newMenu.createSection("sounds");
+        ConfigurationSection commandsSection = newMenu.createSection("commands");
+
+        YamlConfiguration cfg = YamlConfiguration.loadConfiguration(oldFile);
+
+        newMenu.set("title", cfg.getString("permissions-gui.title"));
+
+        int size = cfg.getInt("permissions-gui.size");
+
+        char[] patternChars = new char[size * 9];
+        Arrays.fill(patternChars, '\n');
+
+        int charCounter = 0;
+
+        if (cfg.contains("permissions-gui.fill-items")) {
+            charCounter = MenuConverter.convertFillItems(cfg.getConfigurationSection("permissions-gui.fill-items"),
+                    charCounter, patternChars, itemsSection, commandsSection, soundsSection);
+        }
+
+        char slotsChar = itemChars[charCounter++];
+
+        MenuConverter.convertPagedButtons(cfg.getConfigurationSection("permissions-gui"), newMenu,
+                patternChars, slotsChar, itemChars[charCounter++], itemChars[charCounter++], itemChars[charCounter++],
+                itemsSection, commandsSection, soundsSection);
+
+        newMenu.set("permissions", cfg.getConfigurationSection("permissions-gui.permissions"));
+        newMenu.set("sounds", null);
+        newMenu.set("commands", null);
+
+        newMenu.set("pattern", MenuConverter.buildPattern(size, patternChars, itemChars[charCounter]));
+
+        return true;
     }
 
     @Override
@@ -54,51 +204,45 @@ public final class MenuPermissions extends PagedSuperiorMenu<IslandPrivilege> {
 
         boolean success = false, sendFailMessage = true;
 
-        if(permissionHolder instanceof PlayerRole){
+        if (permissionHolder instanceof PlayerRole) {
             PlayerRole currentRole = island.getRequiredPlayerRole(permission);
 
             //Left Click
-            if(event.getAction() == InventoryAction.PICKUP_ALL){
-                if(!superiorPlayer.getPlayerRole().isLessThan(currentRole)) {
+            if (event.getAction() == InventoryAction.PICKUP_ALL) {
+                if (!superiorPlayer.getPlayerRole().isLessThan(currentRole)) {
                     PlayerRole previousRole = SPlayerRole.of(currentRole.getWeight() - 1);
                     success = true;
 
                     if (previousRole == null) {
                         sendFailMessage = false;
                         success = false;
-                    }
-                    else {
+                    } else {
                         island.setPermission(previousRole, permission, true);
                     }
                 }
             }
 
             //Right Click
-            else if(event.getAction() == InventoryAction.PICKUP_HALF){
-                if(superiorPlayer.getPlayerRole().isHigherThan(currentRole)) {
+            else if (event.getAction() == InventoryAction.PICKUP_HALF) {
+                if (superiorPlayer.getPlayerRole().isHigherThan(currentRole)) {
                     PlayerRole nextRole = SPlayerRole.of(currentRole.getWeight() + 1);
                     success = true;
 
                     if (nextRole == null) {
                         sendFailMessage = false;
                         success = false;
-                    }
-                    else {
+                    } else {
                         island.setPermission(nextRole, permission, true);
                     }
                 }
-            }
-
-            else return;
+            } else return;
 
             permissionHolderName = StringUtils.format(permissionName);
-        }
-
-        else{
-            if(!containsData(permissionName + "-permission-enabled"))
+        } else {
+            if (!containsData(permissionName + "-permission-enabled"))
                 return;
 
-            if(island.hasPermission(superiorPlayer, permission)){
+            if (island.hasPermission(superiorPlayer, permission)) {
                 success = true;
                 PermissionNode permissionNode = island.getPermissionNode((SuperiorPlayer) permissionHolder);
 
@@ -110,8 +254,8 @@ public final class MenuPermissions extends PagedSuperiorMenu<IslandPrivilege> {
             }
         }
 
-        if(success){
-            Locale.UPDATED_PERMISSION.send(superiorPlayer, permissionHolderName);
+        if (success) {
+            Message.UPDATED_PERMISSION.send(superiorPlayer, permissionHolderName);
 
             SoundWrapper soundWrapper = (SoundWrapper) getData(permissionName + "-has-access-sound");
             if (soundWrapper != null)
@@ -123,10 +267,9 @@ public final class MenuPermissions extends PagedSuperiorMenu<IslandPrivilege> {
 
             previousMove = false;
             open(previousMenu);
-        }
-        else{
-            if(sendFailMessage)
-                Locale.LACK_CHANGE_PERMISSION.send(superiorPlayer);
+        } else {
+            if (sendFailMessage)
+                Message.LACK_CHANGE_PERMISSION.send(superiorPlayer);
 
             SoundWrapper soundWrapper = (SoundWrapper) getData(permissionName + "-no-access-sound");
             if (soundWrapper != null)
@@ -136,11 +279,6 @@ public final class MenuPermissions extends PagedSuperiorMenu<IslandPrivilege> {
             if (commands != null)
                 commands.forEach(command -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command.replace("%player%", superiorPlayer.getName())));
         }
-    }
-
-    @Override
-    public void cloneAndOpen(ISuperiorMenu previousMenu) {
-        openInventory(superiorPlayer, previousMenu, island, permissionHolder);
     }
 
     @Override
@@ -155,7 +293,7 @@ public final class MenuPermissions extends PagedSuperiorMenu<IslandPrivilege> {
                     permissionItem = ((ItemBuilder) getData(permissionName + "-role-permission")).clone()
                             .replaceAll("{}", requiredRole.toString());
 
-                    if(!noRolePermission.isEmpty() && !exactRolePermission.isEmpty() && !higherRolePermission.isEmpty()) {
+                    if (!noRolePermission.isEmpty() && !exactRolePermission.isEmpty() && !higherRolePermission.isEmpty()) {
                         List<String> roleString = new ArrayList<>();
 
                         int roleWeight = requiredRole.getWeight();
@@ -195,8 +333,9 @@ public final class MenuPermissions extends PagedSuperiorMenu<IslandPrivilege> {
             }
 
             return permissionItem.build(superiorPlayer);
-        }catch(Exception ex){
+        } catch (Exception ex) {
             SuperiorSkyblockPlugin.log("Failed to load menu because of permission: " + islandPermission.getName());
+            PluginDebugger.debug(ex);
             throw ex;
         }
     }
@@ -206,149 +345,9 @@ public final class MenuPermissions extends PagedSuperiorMenu<IslandPrivilege> {
         return islandPermissions;
     }
 
-    public static void init(){
-        MenuPermissions menuPermissions = new MenuPermissions(null, null, null);
-
-        File file = new File(plugin.getDataFolder(), "menus/permissions.yml");
-
-        if(!file.exists())
-            FileUtils.saveResource("menus/permissions.yml");
-
-        CommentedConfiguration cfg = CommentedConfiguration.loadConfiguration(file);
-
-        try {
-            cfg.syncWithConfig(file, FileUtils.getResource("menus/permissions.yml"), additionalMenuSections("permissions"));
-        }catch (Exception ex){
-            ex.printStackTrace();
-        }
-
-        if(convertOldGUI(cfg)){
-            try {
-                cfg.save(file);
-            }catch (Exception ex){
-                ex.printStackTrace();
-            }
-        }
-
-        noRolePermission = cfg.getString("messages.no-role-permission", "");
-        exactRolePermission = cfg.getString("messages.exact-role-permission", "");
-        higherRolePermission = cfg.getString("messages.higher-role-permission", "");
-
-        Map<Character, List<Integer>> charSlots = FileUtils.loadGUI(menuPermissions, "permissions.yml", cfg);
-
-        ConfigurationSection permissionsSection = cfg.getConfigurationSection("permissions");
-
-        islandPermissions.clear();
-        int position = 0;
-
-        for(String key : permissionsSection.getKeys(false)){
-            if(permissionsSection.getBoolean(key + ".display-menu", false)) {
-                try {
-                    String permission = key.toLowerCase();
-                    updatePermission(IslandPrivilege.getByName(permission), cfg, position++);
-                }catch (Exception ignored){}
-            }
-        }
-
-        menuPermissions.setPreviousSlot(getSlots(cfg, "previous-page", charSlots));
-        menuPermissions.setCurrentSlot(getSlots(cfg, "current-page", charSlots));
-        menuPermissions.setNextSlot(getSlots(cfg, "next-page", charSlots));
-        menuPermissions.setSlots(getSlots(cfg, "slots", charSlots));
-
-        menuPermissions.markCompleted();
-    }
-
-    public static void openInventory(SuperiorPlayer superiorPlayer, ISuperiorMenu previousMenu, Island island, Object permissionHolder){
-        new MenuPermissions(superiorPlayer, island, permissionHolder).open(previousMenu);
-    }
-
-    public static void refreshMenus(Island island){
-        SuperiorMenu.refreshMenus(MenuPermissions.class, superiorMenu -> superiorMenu.island.equals(island));
-    }
-
-    public static void refreshMenus(Island island, Object permissionHolder){
-        SuperiorMenu.refreshMenus(MenuPermissions.class, superiorMenu -> superiorMenu.island.equals(island) &&
-                superiorMenu.permissionHolder.equals(permissionHolder));
-    }
-
-    public static void updatePermission(IslandPrivilege islandPrivilege){
-        File file = new File(plugin.getDataFolder(), "menus/permissions.yml");
-        CommentedConfiguration cfg = CommentedConfiguration.loadConfiguration(file);
-        int position = 0;
-
-        for(String key : cfg.getConfigurationSection("permissions").getKeys(false)){
-            if(islandPrivilege.getName().equalsIgnoreCase(key))
-                break;
-
-            position++;
-        }
-
-        updatePermission(islandPrivilege, cfg, position);
-    }
-
-    public static void updatePermission(IslandPrivilege islandPrivilege, YamlConfiguration cfg, int position){
-        if(!islandPermissions.contains(islandPrivilege)) {
-            MenuPermissions menuPermissions = new MenuPermissions(null, null, null);
-            String permission = islandPrivilege.getName().toLowerCase();
-            if (cfg.contains("permissions." + permission)) {
-                ConfigurationSection permissionSection = cfg.getConfigurationSection("permissions." + permission);
-                menuPermissions.addData(permission + "-has-access-sound", FileUtils.getSound(permissionSection.getConfigurationSection("has-access.sound")));
-                menuPermissions.addData(permission + "-has-access-commands", cfg.getStringList("has-access.commands"));
-                menuPermissions.addData(permission + "-no-access-sound", FileUtils.getSound(permissionSection.getConfigurationSection("no-access.sound")));
-                menuPermissions.addData(permission + "-no-access-commands", cfg.getStringList("no-access.commands"));
-                menuPermissions.addData(permission + "-permission-enabled", FileUtils.getItemStack("permissions.yml", permissionSection.getConfigurationSection("permission-enabled")));
-                menuPermissions.addData(permission + "-permission-disabled", FileUtils.getItemStack("permissions.yml", permissionSection.getConfigurationSection("permission-disabled")));
-                if (permissionSection.contains("role-permission")) {
-                    menuPermissions.addData(permission + "-role-permission", FileUtils.getItemStack("permissions.yml", permissionSection.getConfigurationSection("role-permission")));
-                }
-                if(position >= 0 && position < islandPermissions.size())
-                    islandPermissions.add(position, islandPrivilege);
-                else
-                    islandPermissions.add(islandPrivilege);
-            }
-        }
-    }
-
-    private static boolean convertOldGUI(YamlConfiguration newMenu){
-        File oldFile = new File(plugin.getDataFolder(), "guis/permissions-gui.yml");
-
-        if(!oldFile.exists())
-            return false;
-
-        //We want to reset the items of newMenu.
-        ConfigurationSection itemsSection = newMenu.createSection("items");
-        ConfigurationSection soundsSection = newMenu.createSection("sounds");
-        ConfigurationSection commandsSection = newMenu.createSection("commands");
-
-        YamlConfiguration cfg = YamlConfiguration.loadConfiguration(oldFile);
-
-        newMenu.set("title", cfg.getString("permissions-gui.title"));
-
-        int size = cfg.getInt("permissions-gui.size");
-
-        char[] patternChars = new char[size * 9];
-        Arrays.fill(patternChars, '\n');
-
-        int charCounter = 0;
-
-        if(cfg.contains("permissions-gui.fill-items")) {
-            charCounter = MenuConverter.convertFillItems(cfg.getConfigurationSection("permissions-gui.fill-items"),
-                    charCounter, patternChars, itemsSection, commandsSection, soundsSection);
-        }
-
-        char slotsChar = itemChars[charCounter++];
-
-        MenuConverter.convertPagedButtons(cfg.getConfigurationSection("permissions-gui"), newMenu,
-                patternChars, slotsChar, itemChars[charCounter++], itemChars[charCounter++], itemChars[charCounter++],
-                itemsSection, commandsSection, soundsSection);
-
-        newMenu.set("permissions", cfg.getConfigurationSection("permissions-gui.permissions"));
-        newMenu.set("sounds", null);
-        newMenu.set("commands", null);
-
-        newMenu.set("pattern", MenuConverter.buildPattern(size, patternChars, itemChars[charCounter]));
-
-        return true;
+    @Override
+    public void cloneAndOpen(ISuperiorMenu previousMenu) {
+        openInventory(superiorPlayer, previousMenu, island, permissionHolder);
     }
 
 }

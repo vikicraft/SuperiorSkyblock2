@@ -10,10 +10,9 @@ import com.bgsoftware.superiorskyblock.api.island.SortingType;
 import com.bgsoftware.superiorskyblock.api.island.warps.IslandWarp;
 import com.bgsoftware.superiorskyblock.api.island.warps.WarpCategory;
 import com.bgsoftware.superiorskyblock.api.menu.ISuperiorMenu;
+import com.bgsoftware.superiorskyblock.api.missions.MissionCategory;
 import com.bgsoftware.superiorskyblock.api.wrappers.SuperiorPlayer;
 import com.bgsoftware.superiorskyblock.handler.AbstractHandler;
-import com.bgsoftware.superiorskyblock.menu.impl.MenuIslandMissions;
-import com.bgsoftware.superiorskyblock.menu.impl.MenuPlayerMissions;
 import org.jetbrains.annotations.Nullable;
 
 public final class MenusHandler extends AbstractHandler implements MenusManager {
@@ -108,13 +107,13 @@ public final class MenusHandler extends AbstractHandler implements MenusManager 
     }
 
     @Override
-    public void refreshCounts(Island island) {
-        plugin.getProviders().getMenusProvider().refreshCounts(island);
+    public void openIslandCountsMenu(SuperiorPlayer superiorPlayer, Island island) {
+        openCounts(superiorPlayer, null, island);
     }
 
     @Override
-    public void openIslandCountsMenu(SuperiorPlayer superiorPlayer, Island island) {
-        openCounts(superiorPlayer, null, island);
+    public void refreshCounts(Island island) {
+        plugin.getProviders().getMenusProvider().refreshCounts(island);
     }
 
     @Override
@@ -243,12 +242,18 @@ public final class MenusHandler extends AbstractHandler implements MenusManager 
     }
 
     @Override
+    public void openMissionsCategory(SuperiorPlayer targetPlayer, @Nullable ISuperiorMenu previousMenu, MissionCategory missionCategory) {
+        plugin.getProviders().getMenusProvider().openMissionsCategory(targetPlayer, previousMenu, missionCategory);
+    }
+
+    @Override
     public void openIslandMissionsMenu(SuperiorPlayer superiorPlayer, boolean islandMissions) {
-        if (islandMissions) {
-            MenuIslandMissions.openInventory(superiorPlayer, null);
-        } else {
-            MenuPlayerMissions.openInventory(superiorPlayer, null);
-        }
+
+    }
+
+    @Override
+    public void refreshMissionsCategory(MissionCategory missionCategory) {
+        plugin.getProviders().getMenusProvider().refreshMissionsCategory(missionCategory);
     }
 
     @Override
@@ -387,13 +392,13 @@ public final class MenusHandler extends AbstractHandler implements MenusManager 
     }
 
     @Override
-    public void openIslandVisitorsMenu(SuperiorPlayer superiorPlayer, Island island) {
-        openVisitors(superiorPlayer, null, island);
+    public void refreshVisitors(Island island) {
+        plugin.getProviders().getMenusProvider().refreshVisitors(island);
     }
 
     @Override
-    public void refreshVisitors(Island island) {
-        plugin.getProviders().getMenusProvider().refreshVisitors(island);
+    public void openIslandVisitorsMenu(SuperiorPlayer superiorPlayer, Island island) {
+        openVisitors(superiorPlayer, null, island);
     }
 
     @Override
@@ -402,13 +407,13 @@ public final class MenusHandler extends AbstractHandler implements MenusManager 
     }
 
     @Override
-    public void destroyWarpCategories(Island island) {
-        plugin.getProviders().getMenusProvider().destroyWarpCategories(island);
+    public void refreshWarpCategories(Island island) {
+        plugin.getProviders().getMenusProvider().refreshWarpCategories(island);
     }
 
     @Override
-    public void refreshWarpCategories(Island island) {
-        plugin.getProviders().getMenusProvider().refreshWarpCategories(island);
+    public void destroyWarpCategories(Island island) {
+        plugin.getProviders().getMenusProvider().destroyWarpCategories(island);
     }
 
     @Override

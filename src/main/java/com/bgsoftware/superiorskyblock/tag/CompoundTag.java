@@ -32,7 +32,8 @@ POSSIBILITY OF SUCH DAMAGE.
  */
 package com.bgsoftware.superiorskyblock.tag;
 
-import com.bgsoftware.common.reflection.ReflectMethod;
+import com.bgsoftware.superiorskyblock.SuperiorSkyblockPlugin;
+import com.bgsoftware.superiorskyblock.utils.debug.PluginDebugger;
 import com.google.common.base.Preconditions;
 import org.jetbrains.annotations.NotNull;
 
@@ -54,10 +55,6 @@ public final class CompoundTag extends Tag<Map<String, Tag<?>>> implements Itera
 
     static final Class<?> CLASS = getNNTClass("NBTTagCompound");
 
-    private static final ReflectMethod<Void> SET = new ReflectMethod<>(CLASS,
-            "set", String.class, getNNTClass("NBTBase"));
-    private static final ReflectMethod<Object> GET = new ReflectMethod<>(CLASS, "get", String.class);
-
     public CompoundTag() {
         this(new HashMap<>());
     }
@@ -76,85 +73,90 @@ public final class CompoundTag extends Tag<Map<String, Tag<?>>> implements Itera
         super(value, CLASS);
     }
 
-    public void setString(String key, String value){
+    public static CompoundTag fromNBT(Object tag) {
+        Preconditions.checkArgument(tag.getClass().equals(CLASS), "Cannot convert " + tag.getClass() + " to CompoundTag!");
+
+        Map<String, Tag<?>> map = new HashMap<>();
+
+        try {
+            Set<String> keySet = plugin.getNMSTags().getNBTCompoundValue(tag);
+
+            for (String key : keySet) {
+                map.put(key, Tag.fromNBT(plugin.getNMSTags().getNBTCompoundTag(tag, key)));
+            }
+
+            return new CompoundTag(map);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            PluginDebugger.debug(ex);
+            return null;
+        }
+    }
+
+    public static CompoundTag fromStream(DataInputStream is, int depth) throws IOException {
+        Map<String, Tag<?>> tagMap = new HashMap<>();
+        Tag<?> tag;
+
+        while (!((tag = Tag.fromStream(is, depth + 1)) instanceof EndTag)) {
+            int keyLength = is.readShort() & 0xFFFF;
+            byte[] keyBytes = new byte[keyLength];
+            is.readFully(keyBytes);
+            String key = new String(keyBytes, StandardCharsets.UTF_8);
+            tagMap.put(key, tag);
+        }
+
+        return new CompoundTag(tagMap);
+    }
+
+    public void setString(String key, String value) {
         setTag(key, new StringTag(value));
     }
 
-    public void setInt(String key, int value){
+    public void setInt(String key, int value) {
         setTag(key, new IntTag(value));
     }
 
-    public void setShort(String key, short value){
+    public void setShort(String key, short value) {
         setTag(key, new ShortTag(value));
     }
 
-    public void setByte(String key, byte value){
+    public void setByte(String key, byte value) {
         setTag(key, new ByteTag(value));
     }
 
-    public void setTag(String key, Tag<?> value){
+    public void setTag(String key, Tag<?> value) {
         this.value.put(key, value);
     }
 
-    public String getString(String key){
+    public String getString(String key) {
         Tag<?> tag = getTag(key);
         return !(tag instanceof StringTag) ? null : ((StringTag) tag).value;
     }
 
-    public int getInt(String key){
+    public int getInt(String key) {
         Tag<?> tag = getTag(key);
         return !(tag instanceof IntTag) ? 0 : ((IntTag) tag).value;
     }
 
-
-    public CompoundTag getCompound(String key){
+    public CompoundTag getCompound(String key) {
         Tag<?> tag = getTag(key);
         return !(tag instanceof CompoundTag) ? null : (CompoundTag) tag;
     }
 
-    public Tag<?> getTag(String key){
+    public Tag<?> getTag(String key) {
         return this.value.get(key);
     }
 
-    public boolean containsKey(String key){
+    public boolean containsKey(String key) {
         return this.value.containsKey(key);
     }
 
-    public int size(){
+    public int size() {
         return value.size();
     }
 
-    public Set<Map.Entry<String, Tag<?>>> entrySet(){
+    public Set<Map.Entry<String, Tag<?>>> entrySet() {
         return value.entrySet();
-    }
-
-    @Override
-    protected void writeData(DataOutputStream os) throws IOException {
-        for(Map.Entry<String, Tag<?>> entry : value.entrySet()) {
-            entry.getValue().write(os);
-
-            byte[] keyBytes = entry.getKey().getBytes(StandardCharsets.UTF_8);
-            os.writeShort(keyBytes.length);
-            os.write(keyBytes);
-        }
-
-        os.writeByte((byte) 0);
-    }
-
-    @Override
-    public Object toNBT() {
-        try {
-            Object nbtTagCompound = CONSTRUCTOR.newInstance();
-
-            for(Map.Entry<String, Tag<?>> entry : value.entrySet()){
-                SET.invoke(nbtTagCompound, entry.getKey(), entry.getValue().toNBT());
-            }
-
-            return nbtTagCompound;
-        }catch(Exception ex){
-            ex.printStackTrace();
-            return null;
-        }
     }
 
     @NotNull
@@ -174,38 +176,34 @@ public final class CompoundTag extends Tag<Map<String, Tag<?>>> implements Itera
         return bldr.toString();
     }
 
-    public static CompoundTag fromNBT(Object tag){
-        Preconditions.checkArgument(tag.getClass().equals(CLASS), "Cannot convert " + tag.getClass() + " to CompoundTag!");
+    @Override
+    protected void writeData(DataOutputStream os) throws IOException {
+        for (Map.Entry<String, Tag<?>> entry : value.entrySet()) {
+            entry.getValue().write(os);
 
-        Map<String, Tag<?>> map = new HashMap<>();
-
-        try {
-            Set<String> keySet = plugin.getNMSTags().getNBTCompoundValue(tag);
-
-            for(String key : keySet) {
-                map.put(key, Tag.fromNBT(GET.invoke(tag, key)));
-            }
-
-            return new CompoundTag(map);
-        }catch(Exception ex){
-            ex.printStackTrace();
-            return null;
+            byte[] keyBytes = entry.getKey().getBytes(StandardCharsets.UTF_8);
+            os.writeShort(keyBytes.length);
+            os.write(keyBytes);
         }
+
+        os.writeByte((byte) 0);
     }
 
-    public static CompoundTag fromStream(DataInputStream is, int depth) throws IOException{
-        Map<String, Tag<?>> tagMap = new HashMap<>();
-        Tag<?> tag;
+    @Override
+    public Object toNBT() {
+        try {
+            Object nbtTagCompound = CONSTRUCTOR.newInstance();
 
-        while (!((tag = Tag.fromStream(is, depth + 1)) instanceof EndTag)) {
-            int keyLength = is.readShort() & 0xFFFF;
-            byte[] keyBytes = new byte[keyLength];
-            is.readFully(keyBytes);
-            String key = new String(keyBytes, StandardCharsets.UTF_8);
-            tagMap.put(key, tag);
+            for (Map.Entry<String, Tag<?>> entry : value.entrySet()) {
+                plugin.getNMSTags().setNBTCompoundTagValue(nbtTagCompound, entry.getKey(), entry.getValue().toNBT());
+            }
+
+            return nbtTagCompound;
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            PluginDebugger.debug(ex);
+            return null;
         }
-
-        return new CompoundTag(tagMap);
     }
 
 }

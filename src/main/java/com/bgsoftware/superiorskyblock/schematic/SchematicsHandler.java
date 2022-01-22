@@ -1,13 +1,18 @@
 package com.bgsoftware.superiorskyblock.schematic;
 
-import com.bgsoftware.superiorskyblock.Locale;
+import com.bgsoftware.superiorskyblock.lang.Message;
 import com.bgsoftware.superiorskyblock.SuperiorSkyblockPlugin;
 import com.bgsoftware.superiorskyblock.api.handlers.SchematicManager;
 import com.bgsoftware.superiorskyblock.api.schematic.Schematic;
+import com.bgsoftware.superiorskyblock.api.schematic.parser.SchematicParseException;
+import com.bgsoftware.superiorskyblock.api.schematic.parser.SchematicParser;
 import com.bgsoftware.superiorskyblock.api.wrappers.SuperiorPlayer;
 import com.bgsoftware.superiorskyblock.handler.AbstractHandler;
-import com.bgsoftware.superiorskyblock.hooks.support.FAWEHook;
+import com.bgsoftware.superiorskyblock.handler.HandlerLoadException;
 import com.bgsoftware.superiorskyblock.schematic.container.SchematicsContainer;
+import com.bgsoftware.superiorskyblock.schematic.impl.SuperiorSchematic;
+import com.bgsoftware.superiorskyblock.schematic.parser.DefaultSchematicParser;
+import com.bgsoftware.superiorskyblock.schematic.parser.FAWESchematicParser;
 import com.bgsoftware.superiorskyblock.tag.CompoundTag;
 import com.bgsoftware.superiorskyblock.tag.FloatTag;
 import com.bgsoftware.superiorskyblock.tag.IntTag;
@@ -18,8 +23,10 @@ import com.bgsoftware.superiorskyblock.tag.TagBuilder;
 import com.bgsoftware.superiorskyblock.utils.FileUtils;
 import com.bgsoftware.superiorskyblock.utils.LocationUtils;
 import com.bgsoftware.superiorskyblock.utils.ServerVersion;
-import com.bgsoftware.superiorskyblock.wrappers.SchematicPosition;
+import com.bgsoftware.superiorskyblock.schematic.data.SchematicPosition;
+import com.bgsoftware.superiorskyblock.utils.debug.PluginDebugger;
 import com.google.common.base.Preconditions;
+import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -40,6 +47,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
@@ -48,16 +56,20 @@ public final class SchematicsHandler extends AbstractHandler implements Schemati
 
     private final SchematicsContainer schematicsContainer;
 
-    public SchematicsHandler(SuperiorSkyblockPlugin plugin, SchematicsContainer schematicsContainer){
+    public SchematicsHandler(SuperiorSkyblockPlugin plugin, SchematicsContainer schematicsContainer) {
         super(plugin);
         this.schematicsContainer = schematicsContainer;
     }
 
     @Override
-    public void loadData(){
+    public void loadData() {
+        throw new UnsupportedOperationException("Not supported for SchematicsHandler.");
+    }
+
+    public void loadDataWithException() throws HandlerLoadException {
         File schematicsFolder = new File(plugin.getDataFolder(), "schematics");
 
-        if(!schematicsFolder.exists()) {
+        if (!schematicsFolder.exists()) {
             schematicsFolder.mkdirs();
             FileUtils.saveResource("schematics/desert.schematic");
             FileUtils.saveResource("schematics/desert_nether.schematic", "schematics/normal_nether.schematic");
@@ -70,17 +82,29 @@ public final class SchematicsHandler extends AbstractHandler implements Schemati
             FileUtils.saveResource("schematics/normal_the_end.schematic");
         }
 
+        loadDefaultSchematicParsers();
+
         //noinspection ConstantConditions
-        for(File schemFile : schematicsFolder.listFiles()){
+        for (File schemFile : schematicsFolder.listFiles()) {
             String schemName = schemFile.getName().replace(".schematic", "").replace(".schem", "").toLowerCase();
             Schematic schematic = loadFromFile(schemName, schemFile);
-            if(schematic != null) {
+            if (schematic != null) {
                 this.schematicsContainer.addSchematic(schematic);
-                SuperiorSkyblockPlugin.log("Successfully loaded schematic " + schemFile.getName() + " (" +
-                        (schematic instanceof WorldEditSchematic ? "WorldEdit" : "SuperiorSkyblock") + ")");
             }
-            else{
-                SuperiorSkyblockPlugin.log("Couldn't load schematic " + schemFile.getName() + ".");
+        }
+
+        if (this.schematicsContainer.getSchematicNames().isEmpty()) {
+            throw new HandlerLoadException("&cThere were no valid schematics.",
+                    HandlerLoadException.ErrorLevel.SERVER_SHUTDOWN);
+        }
+    }
+
+    private void loadDefaultSchematicParsers() {
+        if (Bukkit.getPluginManager().isPluginEnabled("FastAsyncWorldEdit")) {
+            try {
+                Class.forName("com.boydti.fawe.object.schematic.Schematic");
+                this.schematicsContainer.addSchematicParser(FAWESchematicParser.getInstance());
+            } catch (ClassNotFoundException ignored) {
             }
         }
     }
@@ -92,22 +116,23 @@ public final class SchematicsHandler extends AbstractHandler implements Schemati
     }
 
     @Override
-    public List<String> getSchematics(){
+    public List<String> getSchematics() {
         return this.schematicsContainer.getSchematicNames();
     }
 
-    public String getDefaultSchematic(World.Environment environment){
-        String suffix = environment == World.Environment.NETHER ? "_nether" : "_the_end";
-        for(String schematicName : this.schematicsContainer.getSchematicNames()) {
-            if(getSchematic(schematicName + suffix) != null)
-                return schematicName;
-        }
-
-        return "";
+    @Override
+    public void registerSchematicParser(SchematicParser schematicParser) {
+        Preconditions.checkNotNull(schematicParser, "schematicParser parameter cannot be null.");
+        this.schematicsContainer.addSchematicParser(schematicParser);
     }
 
     @Override
-    public void saveSchematic(SuperiorPlayer superiorPlayer, String schematicName){
+    public List<SchematicParser> getSchematicParsers() {
+        return this.schematicsContainer.getSchematicParsers();
+    }
+
+    @Override
+    public void saveSchematic(SuperiorPlayer superiorPlayer, String schematicName) {
         Preconditions.checkNotNull(superiorPlayer, "superiorPlayer parameter cannot be null.");
         Preconditions.checkNotNull(superiorPlayer.getLocation(), "superiorPlayer must be online.");
         Preconditions.checkNotNull(schematicName, "schematicName parameter cannot be null.");
@@ -119,14 +144,14 @@ public final class SchematicsHandler extends AbstractHandler implements Schemati
 
         saveSchematic(superiorPlayer.getSchematicPos1().parse(), superiorPlayer.getSchematicPos2().parse(),
                 offset.getBlockX(), offset.getBlockY(), offset.getBlockZ(), offset.getYaw(), offset.getPitch(), schematicName, () ->
-                Locale.SCHEMATIC_SAVED.send(superiorPlayer));
+                        Message.SCHEMATIC_SAVED.send(superiorPlayer));
 
         superiorPlayer.setSchematicPos1(null);
         superiorPlayer.setSchematicPos2(null);
     }
 
     @Override
-    public void saveSchematic(Location pos1, Location pos2, int offsetX, int offsetY, int offsetZ, String schematicName){
+    public void saveSchematic(Location pos1, Location pos2, int offsetX, int offsetY, int offsetZ, String schematicName) {
         Preconditions.checkNotNull(pos1, "pos1 parameter cannot be null.");
         Preconditions.checkNotNull(pos2, "pos2 parameter cannot be null.");
         Preconditions.checkNotNull(schematicName, "schematicName parameter cannot be null.");
@@ -150,12 +175,12 @@ public final class SchematicsHandler extends AbstractHandler implements Schemati
     }
 
     @Override
-    public void saveSchematic(Location pos1, Location pos2, int offsetX, int offsetY, int offsetZ, float yaw, float pitch, String schematicName, @Nullable Runnable runnable){
+    public void saveSchematic(Location pos1, Location pos2, int offsetX, int offsetY, int offsetZ, float yaw, float pitch, String schematicName, @Nullable Runnable runnable) {
         Preconditions.checkNotNull(pos1, "pos1 parameter cannot be null.");
         Preconditions.checkNotNull(pos2, "pos2 parameter cannot be null.");
         Preconditions.checkNotNull(schematicName, "schematicName parameter cannot be null.");
 
-        SuperiorSkyblockPlugin.debug("Action: Save Schematic, Pos #1: " + LocationUtils.getLocation(pos1) +
+        PluginDebugger.debug("Action: Save Schematic, Pos #1: " + LocationUtils.getLocation(pos1) +
                 ", Pos #2: " + LocationUtils.getLocation(pos2) + ", OffsetX: " + offsetX + ", OffsetY: " + offsetY +
                 ", OffsetZ: " + offsetZ + ", Yaw: " + yaw + ", Pitch: " + pitch + ", Name: " + schematicName);
 
@@ -169,17 +194,17 @@ public final class SchematicsHandler extends AbstractHandler implements Schemati
 
         List<Tag<?>> blocks = new ArrayList<>(), entities = new ArrayList<>();
 
-        for(int x = 0; x <= xSize; x++){
-            for(int z = 0; z <= zSize; z++){
-                for(int y = 0; y <= ySize; y++){
-                    int _x = x + min.getBlockX(), _y = y + min.getBlockY(),  _z = z + min.getBlockZ();
+        for (int x = 0; x <= xSize; x++) {
+            for (int z = 0; z <= zSize; z++) {
+                for (int y = 0; y <= ySize; y++) {
+                    int _x = x + min.getBlockX(), _y = y + min.getBlockY(), _z = z + min.getBlockZ();
                     Block block = world.getBlockAt(_x, _y, _z);
                     Material blockType = block.getType();
                     Location blockLocation = block.getLocation();
 
-                    if(blockType != Material.AIR) {
+                    if (blockType != Material.AIR) {
                         CompoundTag tileEntity = plugin.getNMSWorld().readTileEntity(blockLocation);
-                        if(tileEntity != null && block.getState() instanceof InventoryHolder)
+                        if (tileEntity != null && block.getState() instanceof InventoryHolder)
                             tileEntity.setString("inventoryType", ((InventoryHolder) block.getState()).getInventory().getType().name());
 
                         //noinspection deprecation
@@ -196,7 +221,7 @@ public final class SchematicsHandler extends AbstractHandler implements Schemati
             }
         }
 
-        for(Entity livingEntity : getEntities(min, max)){
+        for (Entity livingEntity : getEntities(min, max)) {
             entities.add(new TagBuilder().applyEntity(livingEntity, min).build());
         }
 
@@ -217,67 +242,89 @@ public final class SchematicsHandler extends AbstractHandler implements Schemati
         this.schematicsContainer.addSchematic(schematic);
         saveIntoFile(schematicName, schematic);
 
-        if(runnable != null)
+        if (runnable != null)
             runnable.run();
     }
 
-    private Schematic loadFromFile(String schemName, File file){
+    public String getDefaultSchematic(World.Environment environment) {
+        String suffix = environment == World.Environment.NETHER ? "_nether" : "_the_end";
+        for (String schematicName : this.schematicsContainer.getSchematicNames()) {
+            if (getSchematic(schematicName + suffix) != null)
+                return schematicName;
+        }
+
+        return "";
+    }
+
+    private Schematic parseSchematic(File file, String schemName, SchematicParser schematicParser,
+                                     Consumer<SchematicParseException> onSchematicParseError) {
+        try (DataInputStream reader = new DataInputStream(new GZIPInputStream(new FileInputStream(file)))) {
+            return schematicParser.parseSchematic(reader, schemName);
+        } catch (SchematicParseException error) {
+            onSchematicParseError.accept(error);
+        } catch (Exception error) {
+            SuperiorSkyblockPlugin.log("&cAn unexpected error occurred while loading schematic " + file.getName() + ":");
+            error.printStackTrace();
+            PluginDebugger.debug(error);
+        }
+
+        return null;
+    }
+
+    private Schematic loadFromFile(String schemName, File file) {
         Schematic schematic = null;
+        SchematicParser usedParser = null;
 
-        try {
-            if(!file.exists()) {
-                file.getParentFile().mkdirs();
-                file.createNewFile();
+        for (SchematicParser schematicParser : this.schematicsContainer.getSchematicParsers()) {
+            schematic = parseSchematic(file, schemName, schematicParser, error -> {
+            });
+            if (schematic != null) {
+                usedParser = schematicParser;
+                break;
             }
+        }
 
-            try (DataInputStream reader = new DataInputStream(new GZIPInputStream(new FileInputStream(file)))) {
-                CompoundTag compoundTag = (CompoundTag) Tag.fromStream(reader, 0);
-                if (compoundTag.getValue().containsKey("version") && !compoundTag.getValue().get("version").getValue().equals(ServerVersion.getBukkitVersion()))
-                    SuperiorSkyblockPlugin.log("&cSchematic " + file.getName() + " was created in a different version, may cause issues.");
-                if(compoundTag.getValue().isEmpty()) {
-                    if(FAWEHook.isEnabled())
-                        schematic = FAWEHook.loadSchematic(schemName, file);
-                }
-                else {
-                    schematic = new SuperiorSchematic(schemName, compoundTag);
-                }
-            } catch (Exception ex) {
-                ex.printStackTrace();
-                SuperiorSkyblockPlugin.log("&cSchematic " + file.getName() + " is invalid.");
-            }
-        }catch(IOException ex){
-            ex.printStackTrace();
+        if (schematic == null) {
+            schematic = parseSchematic(file, schemName, DefaultSchematicParser.getInstance(), error ->
+                    SuperiorSkyblockPlugin.log("&cSchematic " + file.getName() + " is not a valid schematic, ignoring..."));
+            if (schematic != null)
+                usedParser = DefaultSchematicParser.getInstance();
+        }
+
+        if (schematic != null && usedParser != null) {
+            SuperiorSkyblockPlugin.log("Successfully loaded schematic " + file.getName() + " (" + usedParser.getClass().getSimpleName() + ")");
         }
 
         return schematic;
     }
 
-    private void saveIntoFile(String name, SuperiorSchematic schematic){
+    private void saveIntoFile(String name, SuperiorSchematic schematic) {
         try {
             File file = new File(plugin.getDataFolder(), "schematics/" + name + ".schematic");
 
-            if(file.exists())
+            if (file.exists())
                 file.delete();
 
             file.getParentFile().mkdirs();
             file.createNewFile();
 
-            try(DataOutputStream writer = new DataOutputStream(new GZIPOutputStream(new FileOutputStream(file)))) {
+            try (DataOutputStream writer = new DataOutputStream(new GZIPOutputStream(new FileOutputStream(file)))) {
                 schematic.getTag().write(writer);
             }
-        }catch(IOException ex){
+        } catch (IOException ex) {
             ex.printStackTrace();
+            PluginDebugger.debug(ex);
         }
     }
 
-    private List<Entity> getEntities(Location min, Location max){
+    private List<Entity> getEntities(Location min, Location max) {
         List<Entity> livingEntities = new ArrayList<>();
 
         Chunk minChunk = min.getChunk(), maxChunk = max.getChunk();
-        for(int x = minChunk.getX(); x <= maxChunk.getX(); x++){
-            for(int z = minChunk.getZ(); z <= maxChunk.getZ(); z++){
+        for (int x = minChunk.getX(); x <= maxChunk.getX(); x++) {
+            for (int z = minChunk.getZ(); z <= maxChunk.getZ(); z++) {
                 Chunk currentChunk = min.getWorld().getChunkAt(x, z);
-                for(Entity entity : currentChunk.getEntities()) {
+                for (Entity entity : currentChunk.getEntities()) {
                     if (!(entity instanceof Player) && betweenLocations(entity.getLocation(), min, max))
                         livingEntities.add(entity);
                 }
@@ -287,7 +334,7 @@ public final class SchematicsHandler extends AbstractHandler implements Schemati
         return livingEntities;
     }
 
-    private boolean betweenLocations(Location location, Location min, Location max){
+    private boolean betweenLocations(Location location, Location min, Location max) {
         return location.getBlockX() >= min.getBlockX() && location.getBlockX() <= max.getBlockX() &&
                 location.getBlockY() >= min.getBlockY() && location.getBlockY() <= max.getBlockY() &&
                 location.getBlockZ() >= min.getBlockZ() && location.getBlockZ() <= max.getBlockZ();

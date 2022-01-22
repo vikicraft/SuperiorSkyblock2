@@ -1,6 +1,7 @@
 package com.bgsoftware.superiorskyblock.database.loader.v1;
 
 import com.bgsoftware.superiorskyblock.SuperiorSkyblockPlugin;
+import com.bgsoftware.superiorskyblock.api.SuperiorSkyblock;
 import com.bgsoftware.superiorskyblock.api.enums.BorderColor;
 import com.bgsoftware.superiorskyblock.api.enums.Rating;
 import com.bgsoftware.superiorskyblock.api.island.IslandFlag;
@@ -306,6 +307,9 @@ public final class DatabaseLoader_V1 implements DatabaseLoader {
                               StatementHolder playersMissionsQuery,
                               StatementHolder playersSettingsQuery) {
         String playerUUID = playerAttributes.getValue(PlayerAttributes.Field.UUID);
+        if (playerUUID == null)
+            return;
+
         playersQuery.setObject(playerUUID)
                 .setObject(playerAttributes.getValue(PlayerAttributes.Field.LAST_USED_NAME))
                 .setObject(playerAttributes.getValue(PlayerAttributes.Field.LAST_USED_SKIN))
@@ -363,12 +367,18 @@ public final class DatabaseLoader_V1 implements DatabaseLoader {
                 .setObject(islandAttributes.getValue(IslandAttributes.Field.BANK_BALANCE))
                 .setObject(islandAttributes.getValue(IslandAttributes.Field.BANK_LAST_INTEREST))
                 .addBatch();
-        ((List<PlayerAttributes>) islandAttributes.getValue(IslandAttributes.Field.BANS)).forEach(playerAttributes ->
+        ((List<PlayerAttributes>) islandAttributes.getValue(IslandAttributes.Field.BANS)).forEach(playerAttributes -> {
+            if (playerAttributes == null)
+                return;
+            Object uuid = playerAttributes.getValue(PlayerAttributes.Field.UUID);
+            if (uuid != null) {
                 islandsBansQuery.setObject(islandUUID)
                         .setObject(playerAttributes.getValue(PlayerAttributes.Field.UUID))
                         .setObject(CONSOLE_UUID.toString())
                         .setObject(currentTime)
-                        .addBatch());
+                        .addBatch();
+            }
+        });
         ((KeyMap<Integer>) islandAttributes.getValue(IslandAttributes.Field.BLOCK_LIMITS)).forEach((key, limit) ->
                 islandsBlockLimitsQuery.setObject(islandUUID)
                         .setObject(key.toString())
@@ -406,12 +416,18 @@ public final class DatabaseLoader_V1 implements DatabaseLoader {
                         .setObject(environment.name())
                         .setObject(islandHome)
                         .addBatch());
-        ((List<PlayerAttributes>) islandAttributes.getValue(IslandAttributes.Field.MEMBERS)).forEach(playerAttributes ->
+        ((List<PlayerAttributes>) islandAttributes.getValue(IslandAttributes.Field.MEMBERS)).forEach(playerAttributes -> {
+            if (playerAttributes == null)
+                return;
+            Object uuid = playerAttributes.getValue(PlayerAttributes.Field.UUID);
+            if (uuid != null) {
                 islandsMembersQuery.setObject(islandUUID)
                         .setObject(playerAttributes.getValue(PlayerAttributes.Field.UUID))
                         .setObject(((PlayerRole) playerAttributes.getValue(PlayerAttributes.Field.ISLAND_ROLE)).getId())
                         .setObject(currentTime)
-                        .addBatch());
+                        .addBatch();
+            }
+        });
         ((Map<String, Integer>) islandAttributes.getValue(IslandAttributes.Field.MISSIONS)).forEach((mission, finishCount) ->
                 islandsMissionsQuery.setObject(islandUUID)
                         .setObject(mission)

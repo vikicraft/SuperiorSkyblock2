@@ -64,7 +64,7 @@ public final class CmdDeposit implements ISuperiorCommand {
 
         SuperiorPlayer superiorPlayer = arguments.getValue();
 
-        BigDecimal moneyInBank = plugin.getProviders().getEconomyProvider().getBalance(superiorPlayer);
+        BigDecimal moneyInBank = plugin.getProviders().getBankEconomyProvider().getBalance(superiorPlayer);
         BigDecimal amount = BigDecimal.valueOf(-1);
 
         if (args[1].equalsIgnoreCase("all") || args[1].equals("*")) {
@@ -75,7 +75,8 @@ public final class CmdDeposit implements ISuperiorCommand {
         }
 
         BankTransaction transaction = island.getIslandBank().depositMoney(superiorPlayer, amount);
-        MenuIslandBank.handleDeposit(superiorPlayer, island, null, transaction, 0, amount);
+        MenuIslandBank.handleDeposit(superiorPlayer, island, null, transaction,
+                null, null, amount);
     }
 
     @Override

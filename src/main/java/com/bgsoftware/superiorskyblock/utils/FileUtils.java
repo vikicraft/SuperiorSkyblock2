@@ -1,17 +1,25 @@
 package com.bgsoftware.superiorskyblock.utils;
 
+import com.bgsoftware.common.config.CommentedConfiguration;
 import com.bgsoftware.superiorskyblock.SuperiorSkyblockPlugin;
-import com.bgsoftware.superiorskyblock.menu.SuperiorMenu;
+import com.bgsoftware.superiorskyblock.api.menu.ISuperiorMenu;
+import com.bgsoftware.superiorskyblock.api.objects.Pair;
+import com.bgsoftware.superiorskyblock.menu.button.SuperiorMenuButton;
+import com.bgsoftware.superiorskyblock.menu.button.impl.BackButton;
+import com.bgsoftware.superiorskyblock.menu.button.impl.DummyButton;
 import com.bgsoftware.superiorskyblock.menu.file.MenuPatternSlots;
+import com.bgsoftware.superiorskyblock.menu.pattern.SuperiorMenuPattern;
 import com.bgsoftware.superiorskyblock.utils.debug.PluginDebugger;
 import com.bgsoftware.superiorskyblock.utils.items.EnchantsUtils;
 import com.bgsoftware.superiorskyblock.utils.items.ItemBuilder;
+import com.bgsoftware.superiorskyblock.utils.items.TemplateItem;
 import com.bgsoftware.superiorskyblock.wrappers.SoundWrapper;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.EntityType;
@@ -19,16 +27,19 @@ import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.BiFunction;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
 
@@ -41,7 +52,8 @@ public final class FileUtils {
 
     }
 
-    public static ItemBuilder getItemStack(String fileName, ConfigurationSection section) {
+    @Nullable
+    public static TemplateItem getItemStack(String fileName, ConfigurationSection section) {
         if (section == null || !section.contains("type"))
             return null;
 
@@ -134,63 +146,100 @@ public final class FileUtils {
             itemBuilder.withCustomModel(section.getInt("customModel"));
         }
 
-        return itemBuilder;
+        return new TemplateItem(itemBuilder);
     }
 
-    public static MenuPatternSlots loadGUI(SuperiorMenu menu, String fileName, YamlConfiguration cfg) {
-        MenuPatternSlots menuPatternSlots = new MenuPatternSlots();
+    @Nullable
+    public static <M extends ISuperiorMenu> Pair<MenuPatternSlots, CommentedConfiguration> loadMenu(
+            SuperiorMenuPattern.AbstractBuilder<?, ?, M> menuPattern,
+            String fileName,
+            @Nullable BiFunction<SuperiorSkyblockPlugin, YamlConfiguration, Boolean> convertOldMenu) {
+        return loadMenu(menuPattern, fileName, false, convertOldMenu);
+    }
 
-        menu.resetData();
+    @Nullable
+    public static <M extends ISuperiorMenu> Pair<MenuPatternSlots, CommentedConfiguration> loadMenu(
+            SuperiorMenuPattern.AbstractBuilder<?, ?, M> menuPattern,
+            String fileName,
+            boolean customMenu,
+            @Nullable BiFunction<SuperiorSkyblockPlugin, YamlConfiguration, Boolean> convertOldMenu) {
+        String menuPath = customMenu ? "custom/" : "";
 
-        menu.setTitle(StringUtils.translateColors(cfg.getString("title", "")));
-        menu.setInventoryType(InventoryType.valueOf(cfg.getString("type", "CHEST")));
-        menu.setPreviousMoveAllowed(cfg.getBoolean("previous-menu", true));
-        menu.setOpeningSound(FileUtils.getSound(cfg.getConfigurationSection("open-sound")));
+        File file = new File(plugin.getDataFolder(), "menus/" + menuPath + fileName);
 
-        List<String> pattern = cfg.getStringList("pattern");
+        if (!file.exists() && !customMenu)
+            FileUtils.saveResource("menus/" + fileName);
 
-        menu.setRowsSize(pattern.size());
+        CommentedConfiguration cfg = new CommentedConfiguration();
 
-        for (int row = 0; row < pattern.size(); row++) {
-            String patternLine = pattern.get(row);
-            int slot = row * 9;
+        try {
+            cfg.load(file);
+        } catch (InvalidConfigurationException error) {
+            SuperiorSkyblockPlugin.log("&c[" + fileName + "] There is an issue with the format of the file.");
+            PluginDebugger.debug(error);
+            return null;
+        } catch (IOException error) {
+            SuperiorSkyblockPlugin.log("&c[" + fileName + "] An unexpected error occurred while parsing the file:");
+            PluginDebugger.debug(error);
+            error.printStackTrace();
+            return null;
+        }
 
-            for (int i = 0; i < patternLine.length(); i++) {
-                char ch = patternLine.charAt(i);
-                if (ch != ' ') {
-                    ItemBuilder itemBuilder = getItemStack(fileName, cfg.getConfigurationSection("items." + ch));
-
-                    if (itemBuilder != null) {
-                        List<String> commands = cfg.getStringList("commands." + ch);
-                        SoundWrapper sound = getSound(cfg.getConfigurationSection("sounds." + ch));
-                        String permission = cfg.getString("permissions." + ch + ".permission");
-                        SoundWrapper noAccessSound = getSound(cfg.getConfigurationSection("permissions." + ch + ".no-access-sound"));
-
-                        menu.addFillItem(slot, itemBuilder);
-                        menu.addCommands(slot, commands);
-                        menu.addPermission(slot, permission, noAccessSound);
-                        menu.addSound(slot, sound);
-                    }
-
-                    menuPatternSlots.addSlot(ch, slot);
-
-                    slot++;
-                }
+        if (convertOldMenu != null && convertOldMenu.apply(plugin, cfg)) {
+            try {
+                cfg.save(file);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                PluginDebugger.debug(ex);
             }
         }
 
-        int backButton = menuPatternSlots.getSlot(cfg.getString("back", ""));
-        menu.setBackButton(backButton);
+        menuPattern.setTitle(StringUtils.translateColors(cfg.getString("title", "")))
+                .setInventoryType(InventoryType.valueOf(cfg.getString("type", "CHEST")))
+                .setPreviousMoveAllowed(cfg.getBoolean("previous-menu", true))
+                .setOpeningSound(FileUtils.getSound(cfg.getConfigurationSection("open-sound")));
 
-        if (plugin.getSettings().isOnlyBackButton() && backButton == -1)
+        MenuPatternSlots menuPatternSlots = new MenuPatternSlots();
+        List<String> pattern = cfg.getStringList("pattern");
+
+        menuPattern.setRowsSize(pattern.size());
+
+        String backButton = cfg.getString("back", "");
+        boolean backButtonFound = false;
+
+        for (int row = 0; row < pattern.size() && row < 6; row++) {
+            String patternLine = pattern.get(row).replace(" ", "");
+            for (int i = 0; i < patternLine.length() && i < 9; i++) {
+                int slot = row * 9 + i;
+
+                char ch = patternLine.charAt(i);
+
+                boolean isBackButton = backButton.contains(ch + "");
+
+                if (isBackButton) {
+                    backButtonFound = true;
+                }
+
+                SuperiorMenuButton.AbstractBuilder<?, ?, M> buttonBuilder = isBackButton ?
+                        new BackButton.Builder<>() : new DummyButton.Builder<>();
+
+                menuPattern.setButton(slot, buttonBuilder
+                        .setButtonItem(getItemStack(fileName, cfg.getConfigurationSection("items." + ch)))
+                        .setCommands(cfg.getStringList("commands." + ch))
+                        .setClickSound(getSound(cfg.getConfigurationSection("sounds." + ch)))
+                        .setRequiredPermission(cfg.getString("permissions." + ch + ".permission"))
+                        .setLackPermissionsSound(getSound(cfg.getConfigurationSection("permissions." + ch + ".no-access-sound"))));
+
+                menuPatternSlots.addSlot(ch, slot);
+            }
+        }
+
+        if (plugin.getSettings().isOnlyBackButton() && !backButtonFound) {
             SuperiorSkyblockPlugin.log("&c[" + fileName + "] Menu doesn't have a back button, it's impossible to close it.");
+            return null;
+        }
 
-        return menuPatternSlots;
-    }
-
-    public static String fromLocation(Location location) {
-        return location.getWorld().getName() + "," + location.getX() + "," + location.getY() + "," + location.getZ() + "," +
-                location.getYaw() + "," + location.getPitch();
+        return new Pair<>(menuPatternSlots, cfg);
     }
 
     public static Location toLocation(String location) {
@@ -302,7 +351,7 @@ public final class FileUtils {
             while ((jarEntry = jis.getNextJarEntry()) != null) {
                 String name = jarEntry.getName();
 
-                if (name == null || name.isEmpty() || !name.endsWith(".class")) {
+                if (!name.endsWith(".class")) {
                     continue;
                 }
 

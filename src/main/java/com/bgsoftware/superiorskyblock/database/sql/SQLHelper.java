@@ -1,12 +1,17 @@
 package com.bgsoftware.superiorskyblock.database.sql;
 
 import com.bgsoftware.superiorskyblock.SuperiorSkyblockPlugin;
+import com.bgsoftware.superiorskyblock.api.objects.Pair;
+import com.bgsoftware.superiorskyblock.database.sql.session.QueryResult;
+import com.bgsoftware.superiorskyblock.database.sql.session.SQLSession;
+import com.bgsoftware.superiorskyblock.database.sql.session.impl.MariaDBSession;
+import com.bgsoftware.superiorskyblock.database.sql.session.impl.MySQLSession;
+import com.bgsoftware.superiorskyblock.database.sql.session.impl.PostgreSQLSession;
+import com.bgsoftware.superiorskyblock.database.sql.session.impl.SQLiteSession;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.Optional;
-import java.util.function.Consumer;
 
 public final class SQLHelper {
 
@@ -21,7 +26,7 @@ public final class SQLHelper {
     }
 
     public static void waitForConnection() {
-        if(isReady())
+        if (isReady())
             globalSession.waitForConnection();
     }
 
@@ -30,8 +35,24 @@ public final class SQLHelper {
     }
 
     public static boolean createConnection(SuperiorSkyblockPlugin plugin) {
-        SQLSession session = new SQLSession(plugin, true);
-        if(session.createConnection()) {
+        SQLSession session;
+
+        switch (plugin.getSettings().getDatabase().getType().toUpperCase()) {
+            case "MYSQL":
+                session = new MySQLSession(plugin, true);
+                break;
+            case "MARIADB":
+                session = new MariaDBSession(plugin, true);
+                break;
+            case "POSTGRESQL":
+                session = new PostgreSQLSession(plugin, true);
+                break;
+            default:
+                session = new SQLiteSession(plugin, true);
+                break;
+        }
+
+        if (session.createConnection()) {
             globalSession = session;
             return true;
         }
@@ -39,49 +60,45 @@ public final class SQLHelper {
         return false;
     }
 
-    public static void executeUpdate(String statement) {
-        if(isReady())
-            globalSession.executeUpdate(statement);
+    public static void createTable(String tableName, Pair<String, String>... columns) {
+        if (isReady())
+            globalSession.createTable(tableName, columns, QueryResult.EMPTY_VOID_QUERY_RESULT);
     }
 
-    public static void executeUpdate(String statement, Consumer<SQLException> onFailure) {
-        if(isReady())
-            globalSession.executeUpdate(statement, onFailure);
+    public static void createIndex(String indexName, String tableName, String... columns) {
+        if (isReady())
+            globalSession.createIndex(indexName, tableName, columns, QueryResult.EMPTY_VOID_QUERY_RESULT);
     }
 
-    public static boolean doesConditionExist(String statement) {
-        return isReady() && globalSession.doesConditionExist(statement);
+    public static void modifyColumnType(String tableName, String columnName, String newType) {
+        if (isReady())
+            globalSession.modifyColumnType(tableName, columnName, newType, QueryResult.EMPTY_VOID_QUERY_RESULT);
     }
 
-    public static void executeQuery(String statement, QueryConsumer<ResultSet> callback) {
-        if(isReady())
-            globalSession.executeQuery(statement, callback::accept);
+    public static void removePrimaryKey(String tableName, String columnName) {
+        if (isReady())
+            globalSession.removePrimaryKey(tableName, columnName, QueryResult.EMPTY_VOID_QUERY_RESULT);
+    }
+
+    public static void select(String tableName, String filters, QueryResult<ResultSet> queryResult) {
+        if (isReady())
+            globalSession.select(tableName, filters, queryResult);
+    }
+
+    public static void setJournalMode(String jounralMode, QueryResult<ResultSet> queryResult) {
+        if (isReady())
+            globalSession.setJournalMode(jounralMode, queryResult);
+    }
+
+    public static void customQuery(String query, QueryResult<PreparedStatement> queryResult) {
+        if (isReady())
+            globalSession.customQuery(query, queryResult);
     }
 
     public static void close() {
-        if(isReady())
-            globalSession.close();
+        if (isReady())
+            globalSession.closeConnection();
     }
 
-    public static void buildStatement(String query, QueryConsumer<PreparedStatement> consumer, Consumer<SQLException> failure) {
-        if(isReady())
-            globalSession.buildStatement(query, consumer::accept, failure);
-    }
-
-    public static void setAutoCommit(boolean autoCommit) {
-        if(isReady())
-            globalSession.setAutoCommit(autoCommit);
-    }
-
-    public static void commit() throws SQLException {
-        if(isReady())
-            globalSession.commit();
-    }
-
-    public interface QueryConsumer<T> {
-
-        void accept(T value) throws SQLException;
-
-    }
 }
 

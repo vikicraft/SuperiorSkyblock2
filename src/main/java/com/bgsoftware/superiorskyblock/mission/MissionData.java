@@ -3,8 +3,10 @@ package com.bgsoftware.superiorskyblock.mission;
 import com.bgsoftware.superiorskyblock.api.missions.Mission;
 import com.bgsoftware.superiorskyblock.utils.FileUtils;
 import com.bgsoftware.superiorskyblock.utils.items.ItemBuilder;
+import com.bgsoftware.superiorskyblock.utils.items.TemplateItem;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,9 +19,16 @@ public final class MissionData {
     private final Mission<?> mission;
     private final List<ItemStack> itemRewards = new ArrayList<>();
     private final List<String> commandRewards = new ArrayList<>();
-    private final boolean autoReward, islandMission;
-    private final boolean disbandReset, leaveReset;
-    private final ItemBuilder notCompleted, canComplete, completed;
+    private final boolean autoReward;
+    private final boolean islandMission;
+    private final boolean disbandReset;
+    private final boolean leaveReset;
+    @Nullable
+    private final TemplateItem notCompleted;
+    @Nullable
+    private final TemplateItem canComplete;
+    @Nullable
+    private final TemplateItem completed;
     private final int resetAmount;
 
     MissionData(Mission<?> mission, ConfigurationSection section) {
@@ -33,9 +42,12 @@ public final class MissionData {
 
         if (section.contains("rewards.items")) {
             for (String key : section.getConfigurationSection("rewards.items").getKeys(false)) {
-                ItemStack itemStack = FileUtils.getItemStack("config.yml", section.getConfigurationSection("rewards.items." + key)).build();
-                itemStack.setAmount(section.getInt("rewards.items." + key + ".amount", 1));
-                this.itemRewards.add(itemStack);
+                TemplateItem templateItem = FileUtils.getItemStack("config.yml", section.getConfigurationSection("rewards.items." + key));
+                if (templateItem != null) {
+                    ItemStack itemStack = templateItem.build();
+                    itemStack.setAmount(section.getInt("rewards.items." + key + ".amount", 1));
+                    this.itemRewards.add(itemStack);
+                }
             }
         }
 
@@ -83,15 +95,15 @@ public final class MissionData {
     }
 
     public ItemBuilder getCompleted() {
-        return completed.clone();
+        return (completed == null ? TemplateItem.AIR : completed).getBuilder();
     }
 
     public ItemBuilder getCanComplete() {
-        return canComplete.clone();
+        return (canComplete == null ? TemplateItem.AIR : canComplete).getBuilder();
     }
 
     public ItemBuilder getNotCompleted() {
-        return notCompleted.clone();
+        return (notCompleted == null ? TemplateItem.AIR : notCompleted).getBuilder();
     }
 
     @Override

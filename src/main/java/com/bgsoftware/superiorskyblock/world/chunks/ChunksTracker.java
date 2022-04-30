@@ -3,7 +3,6 @@ package com.bgsoftware.superiorskyblock.world.chunks;
 import com.bgsoftware.superiorskyblock.SuperiorSkyblockPlugin;
 import com.bgsoftware.superiorskyblock.api.island.Island;
 import com.bgsoftware.superiorskyblock.database.bridge.IslandsDatabaseBridge;
-import com.bgsoftware.superiorskyblock.island.SpawnIsland;
 import com.bgsoftware.superiorskyblock.database.serialization.IslandsSerializer;
 import com.bgsoftware.superiorskyblock.utils.debug.PluginDebugger;
 import com.bgsoftware.superiorskyblock.world.GridHandler;
@@ -19,6 +18,7 @@ import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 
+import javax.annotation.Nullable;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -78,7 +78,7 @@ public final class ChunksTracker {
         return IslandsSerializer.serializeDirtyChunks(dirtyChunks);
     }
 
-    public static void deserialize(GridHandler grid, Island island, String serialized) {
+    public static void deserialize(GridHandler grid, Island island, @Nullable String serialized) {
         try {
             if (serialized == null || serialized.isEmpty()) throw new JsonSyntaxException("");
             JsonObject dirtyChunksObject = gson.fromJson(serialized, JsonObject.class);
@@ -153,16 +153,20 @@ public final class ChunksTracker {
         if (island == null)
             island = getIsland(plugin.getGrid(), chunkPosition);
 
-        if (dirtyChunks.containsKey(island) && dirtyChunks.get(island).remove(chunkPosition) && save)
-            IslandsDatabaseBridge.saveDirtyChunks(island);
+        Set<ChunkPosition> dirtyChunks = ChunksTracker.dirtyChunks.get(island);
+
+        if (dirtyChunks != null && dirtyChunks.remove(chunkPosition) && save)
+            IslandsDatabaseBridge.saveDirtyChunks(island, dirtyChunks);
     }
 
     public static void markDirty(Island island, ChunkPosition chunkPosition, boolean save) {
         if (island == null)
             island = getIsland(plugin.getGrid(), chunkPosition);
 
-        if (dirtyChunks.computeIfAbsent(island, s -> new HashSet<>()).add(chunkPosition) && save && !(island instanceof SpawnIsland))
-            IslandsDatabaseBridge.saveDirtyChunks(island);
+        Set<ChunkPosition> dirtyChunks = ChunksTracker.dirtyChunks.computeIfAbsent(island, s -> new HashSet<>());
+
+        if (dirtyChunks.add(chunkPosition) && save && !island.isSpawn())
+            IslandsDatabaseBridge.saveDirtyChunks(island, dirtyChunks);
     }
 
 }

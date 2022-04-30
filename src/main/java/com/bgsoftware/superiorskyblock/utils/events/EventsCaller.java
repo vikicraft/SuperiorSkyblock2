@@ -8,6 +8,7 @@ import com.bgsoftware.superiorskyblock.api.events.IslandBanEvent;
 import com.bgsoftware.superiorskyblock.api.events.IslandBankDepositEvent;
 import com.bgsoftware.superiorskyblock.api.events.IslandBankWithdrawEvent;
 import com.bgsoftware.superiorskyblock.api.events.IslandBiomeChangeEvent;
+import com.bgsoftware.superiorskyblock.api.events.IslandChatEvent;
 import com.bgsoftware.superiorskyblock.api.events.IslandChunkResetEvent;
 import com.bgsoftware.superiorskyblock.api.events.IslandCoopPlayerEvent;
 import com.bgsoftware.superiorskyblock.api.events.IslandCreateEvent;
@@ -29,6 +30,7 @@ import com.bgsoftware.superiorskyblock.api.events.IslandWorthCalculatedEvent;
 import com.bgsoftware.superiorskyblock.api.events.IslandWorthUpdateEvent;
 import com.bgsoftware.superiorskyblock.api.events.MissionCompleteEvent;
 import com.bgsoftware.superiorskyblock.api.events.PluginInitializeEvent;
+import com.bgsoftware.superiorskyblock.api.events.PluginInitializedEvent;
 import com.bgsoftware.superiorskyblock.api.events.PreIslandCreateEvent;
 import com.bgsoftware.superiorskyblock.api.island.Island;
 import com.bgsoftware.superiorskyblock.api.missions.Mission;
@@ -238,18 +240,22 @@ public final class EventsCaller {
         return !blockUnstackEvent.isCancelled();
     }
 
-    public static void callIslandBankDepositEvent(SuperiorPlayer superiorPlayer, Island island, BigDecimal amount) {
-        if (!plugin.getSettings().getDisabledEvents().contains("islandbankdepositevent")) {
-            IslandBankDepositEvent islandBankDepositEvent = new IslandBankDepositEvent(superiorPlayer, island, amount);
-            Bukkit.getPluginManager().callEvent(islandBankDepositEvent);
-        }
+    public static EventResult<String> callIslandBankDepositEvent(SuperiorPlayer superiorPlayer, Island island, BigDecimal amount) {
+        if (plugin.getSettings().getDisabledEvents().contains("islandbankdepositevent"))
+            return EventResult.of(false, null);
+
+        IslandBankDepositEvent islandBankDepositEvent = new IslandBankDepositEvent(superiorPlayer, island, amount);
+        Bukkit.getPluginManager().callEvent(islandBankDepositEvent);
+        return EventResult.of(islandBankDepositEvent.isCancelled(), islandBankDepositEvent.getFailureReason());
     }
 
-    public static void callIslandBankWithdrawEvent(SuperiorPlayer superiorPlayer, Island island, BigDecimal amount) {
-        if (!plugin.getSettings().getDisabledEvents().contains("islandbankwithdrawevent")) {
-            IslandBankWithdrawEvent islandBankWithdrawEvent = new IslandBankWithdrawEvent(superiorPlayer, island, amount);
-            Bukkit.getPluginManager().callEvent(islandBankWithdrawEvent);
-        }
+    public static EventResult<String> callIslandBankWithdrawEvent(SuperiorPlayer superiorPlayer, Island island, BigDecimal amount) {
+        if (plugin.getSettings().getDisabledEvents().contains("islandbankwithdrawevent"))
+            return EventResult.of(false, null);
+
+        IslandBankWithdrawEvent islandBankWithdrawEvent = new IslandBankWithdrawEvent(superiorPlayer, island, amount);
+        Bukkit.getPluginManager().callEvent(islandBankWithdrawEvent);
+        return EventResult.of(islandBankWithdrawEvent.isCancelled(), islandBankWithdrawEvent.getFailureReason());
     }
 
     public static void callIslandRestrictMoveEvent(SuperiorPlayer superiorPlayer, IslandRestrictMoveEvent.RestrictReason restrictReason) {
@@ -261,6 +267,10 @@ public final class EventsCaller {
 
     public static void callPluginInitializeEvent(SuperiorSkyblock plugin) {
         Bukkit.getPluginManager().callEvent(new PluginInitializeEvent(plugin));
+    }
+
+    public static void callPluginInitializedEvent(SuperiorSkyblock plugin) {
+        Bukkit.getPluginManager().callEvent(new PluginInitializedEvent(plugin));
     }
 
     public static boolean callIslandCoopPlayerEvent(Island island, SuperiorPlayer player, SuperiorPlayer target) {
@@ -288,6 +298,16 @@ public final class EventsCaller {
         IslandChunkResetEvent islandChunkResetEvent = new IslandChunkResetEvent(island, chunkPosition.getWorld(),
                 chunkPosition.getX(), chunkPosition.getZ());
         Bukkit.getPluginManager().callEvent(islandChunkResetEvent);
+    }
+
+    public static EventResult<String> callIslandChatEvent(Island island, SuperiorPlayer superiorPlayer,
+                                                          String message) {
+        if (plugin.getSettings().getDisabledEvents().contains("islandchatevent"))
+            return EventResult.of(false, message);
+
+        IslandChatEvent islandChatEvent = new IslandChatEvent(island, superiorPlayer, message);
+        Bukkit.getPluginManager().callEvent(islandChatEvent);
+        return EventResult.of(islandChatEvent.isCancelled(), message);
     }
 
 }

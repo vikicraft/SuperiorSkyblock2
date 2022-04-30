@@ -3,6 +3,9 @@ package com.bgsoftware.superiorskyblock.world.event;
 import com.bgsoftware.superiorskyblock.SuperiorSkyblockPlugin;
 import com.bgsoftware.superiorskyblock.api.island.Island;
 import com.bgsoftware.superiorskyblock.api.world.event.WorldEventsManager;
+import com.bgsoftware.superiorskyblock.module.BuiltinModules;
+import com.bgsoftware.superiorskyblock.module.upgrades.type.UpgradeTypeCropGrowth;
+import com.bgsoftware.superiorskyblock.threads.Executor;
 import com.bgsoftware.superiorskyblock.world.chunks.ChunksTracker;
 import com.google.common.base.Preconditions;
 import org.bukkit.Chunk;
@@ -39,7 +42,8 @@ public final class WorldEventsManagerImpl implements WorldEventsManager {
 
         plugin.getNMSChunks().injectChunkSections(chunk);
 
-        if (island.isInsideRange(chunk))
+        boolean cropGrowthEnabled = BuiltinModules.UPGRADES.isUpgradeTypeEnabled(UpgradeTypeCropGrowth.class);
+        if (cropGrowthEnabled && island.isInsideRange(chunk))
             plugin.getNMSChunks().startTickingChunk(island, chunk, false);
 
         if (!plugin.getNMSChunks().isChunkEmpty(chunk))
@@ -50,6 +54,15 @@ public final class WorldEventsManagerImpl implements WorldEventsManager {
             if (entity instanceof ArmorStand && isHologram((ArmorStand) entity) &&
                     plugin.getStackedBlocks().getStackedBlockAmount(entity.getLocation().subtract(0, 1, 0)) > 1)
                 entity.remove();
+        }
+
+        Location islandCenter = island.getCenter(chunk.getWorld().getEnvironment());
+
+        if (chunk.getX() == (islandCenter.getBlockX() >> 4) && chunk.getZ() == (islandCenter.getBlockZ() >> 4)) {
+            Executor.sync(() -> {
+                if (chunk.isLoaded())
+                    island.getEntitiesTracker().recalculateEntityCounts();
+            }, 20L);
         }
 
         plugin.getStackedBlocks().updateStackedBlockHolograms(chunk);
@@ -69,7 +82,8 @@ public final class WorldEventsManagerImpl implements WorldEventsManager {
         if (island == null)
             return;
 
-        plugin.getNMSChunks().startTickingChunk(island, chunk, true);
+        if (BuiltinModules.UPGRADES.isUpgradeTypeEnabled(UpgradeTypeCropGrowth.class))
+            plugin.getNMSChunks().startTickingChunk(island, chunk, true);
 
         if (!island.isSpawn() && !plugin.getNMSChunks().isChunkEmpty(chunk))
             ChunksTracker.markDirty(island, chunk, true);

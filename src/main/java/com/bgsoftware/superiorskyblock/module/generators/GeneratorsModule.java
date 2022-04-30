@@ -47,10 +47,17 @@ public final class GeneratorsModule extends BuiltinModule {
 
     @Override
     public void onEnable(SuperiorSkyblockPlugin plugin) {
+        // Do nothing.
     }
 
     @Override
     public void onDisable(SuperiorSkyblockPlugin plugin) {
+        // Do nothing.
+    }
+
+    @Override
+    public void loadData(SuperiorSkyblockPlugin plugin) {
+        // Do nothing.
     }
 
     @Override

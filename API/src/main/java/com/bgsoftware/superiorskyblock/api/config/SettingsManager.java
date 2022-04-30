@@ -543,6 +543,11 @@ public interface SettingsManager {
      */
     long getRecalcTaskTimeout();
 
+    /**
+     * Whether to detect the player's language automatically when he first joins the server.
+     * Config-path: auto-language-detection
+     */
+    boolean isAutoLanguageDetection();
 
     interface Database {
 
@@ -864,6 +869,11 @@ public interface SettingsManager {
              */
             boolean isSchematicOffset();
 
+            /**
+             * Get the default biome for the world.
+             */
+            String getBiome();
+
         }
 
         interface Nether {
@@ -892,6 +902,11 @@ public interface SettingsManager {
              */
             boolean isSchematicOffset();
 
+            /**
+             * Get the default biome for the world.
+             */
+            String getBiome();
+
         }
 
         interface End {
@@ -919,6 +934,11 @@ public interface SettingsManager {
              * Config-path: worlds.end.schematic-offset
              */
             boolean isSchematicOffset();
+
+            /**
+             * Get the default biome for the world.
+             */
+            String getBiome();
 
             /**
              * Whether ender-dragon fights should be enabled for islands or not.

@@ -1,6 +1,5 @@
 package com.bgsoftware.superiorskyblock.island.warps;
 
-import com.bgsoftware.superiorskyblock.SuperiorSkyblockPlugin;
 import com.bgsoftware.superiorskyblock.api.island.Island;
 import com.bgsoftware.superiorskyblock.api.island.warps.IslandWarp;
 import com.bgsoftware.superiorskyblock.api.island.warps.WarpCategory;
@@ -18,7 +17,7 @@ import java.util.List;
 
 public final class SWarpCategory implements WarpCategory {
 
-    private static final ItemStack DEFAULT_WARP_ICON = new ItemBuilder(Material.BOOK)
+    public static final ItemStack DEFAULT_WARP_ICON = new ItemBuilder(Material.BOOK)
             .withName("&6{0}").build();
 
     private final List<IslandWarp> islandWarps = new ArrayList<>();

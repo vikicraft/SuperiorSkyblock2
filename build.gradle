@@ -5,7 +5,7 @@ plugins {
 }
 
 group 'SuperiorSkyblock'
-version = "1.8.3"
+version = "1.9.0"
 
 allprojects {
     apply plugin: 'java'
@@ -51,7 +51,7 @@ dependencies {
     implementation fileTree("archive")
     implementation project(":API")
 
-    implementation 'com.bgsoftware.common.config:CommentedConfiguration:latest'
+    implementation 'com.bgsoftware.common.config:CommentedConfiguration:1.0.3'
     implementation 'com.bgsoftware.common.updater:Updater:latest'
     implementation 'com.bgsoftware.common.reflection:ReflectionUtils:latest'
     implementation 'com.bgsoftware.common.executors:Executors:1.0.1'

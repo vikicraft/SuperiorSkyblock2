@@ -4,15 +4,16 @@ import com.bgsoftware.common.config.CommentedConfiguration;
 import com.bgsoftware.superiorskyblock.SuperiorSkyblockPlugin;
 import com.bgsoftware.superiorskyblock.api.commands.SuperiorCommand;
 import com.bgsoftware.superiorskyblock.api.missions.Mission;
+import com.bgsoftware.superiorskyblock.api.objects.Pair;
 import com.bgsoftware.superiorskyblock.menu.file.MenuPatternSlots;
-import com.bgsoftware.superiorskyblock.menu.impl.MenuMissions;
+import com.bgsoftware.superiorskyblock.menu.impl.MenuMembers;
+import com.bgsoftware.superiorskyblock.menu.pattern.impl.RegularMenuPattern;
 import com.bgsoftware.superiorskyblock.mission.SMissionCategory;
 import com.bgsoftware.superiorskyblock.module.BuiltinModule;
 import com.bgsoftware.superiorskyblock.module.missions.commands.CmdAdminMission;
 import com.bgsoftware.superiorskyblock.module.missions.commands.CmdMission;
 import com.bgsoftware.superiorskyblock.module.missions.commands.CmdMissions;
 import com.bgsoftware.superiorskyblock.utils.FileUtils;
-import com.bgsoftware.superiorskyblock.threads.Executor;
 import com.bgsoftware.superiorskyblock.utils.debug.PluginDebugger;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.InvalidConfigurationException;
@@ -32,6 +33,8 @@ import java.util.Map;
 public final class MissionsModule extends BuiltinModule {
 
     private static final int MAX_MISSIONS_NAME_LENGTH = 255;
+
+    private final List<Mission<?>> missionsToLoad = new ArrayList<>();
 
     private boolean enabled = true;
 
@@ -104,8 +107,6 @@ public final class MissionsModule extends BuiltinModule {
         if (!enabled)
             return;
 
-        List<Mission<?>> missionsToLoad = new ArrayList<>();
-
         ConfigurationSection categoriesSection = config.getConfigurationSection("categories");
 
         if (categoriesSection != null) {
@@ -129,18 +130,20 @@ public final class MissionsModule extends BuiltinModule {
                 missionsToLoad.addAll(categoryMissions);
             }
         }
-
-        if (!missionsToLoad.isEmpty()) {
-            // Should be running in 1-tick delay so players and their islands will be loaded
-            // before loading data of missions, as they depend on this data.
-            Executor.sync(() -> plugin.getMissions().loadMissionsData(missionsToLoad), 1L);
-        }
     }
 
     @Override
     public void onDisable(SuperiorSkyblockPlugin plugin) {
         if (enabled)
             plugin.getMissions().saveMissionsData();
+    }
+
+    @Override
+    public void loadData(SuperiorSkyblockPlugin plugin) {
+        if (!missionsToLoad.isEmpty()) {
+            plugin.getMissions().loadMissionsData(missionsToLoad);
+            missionsToLoad.clear();
+        }
     }
 
     @Override
@@ -239,15 +242,6 @@ public final class MissionsModule extends BuiltinModule {
         return true;
     }
 
-    private YamlConfiguration loadMissionsMenuFile(SuperiorSkyblockPlugin plugin) {
-        File missionsMenuFile = new File(plugin.getDataFolder(), "menus/missions.yml");
-
-        if (!missionsMenuFile.exists())
-            FileUtils.saveResource("menus/missions.yml");
-
-        return CommentedConfiguration.loadConfiguration(missionsMenuFile);
-    }
-
     @SuppressWarnings("ResultOfMethodCallIgnored")
     private void convertNonCategorizedMissions(SuperiorSkyblockPlugin plugin, File file, YamlConfiguration config) {
         ConfigurationSection missionsSection = config.getConfigurationSection("missions");
@@ -256,8 +250,15 @@ public final class MissionsModule extends BuiltinModule {
             return;
 
         ConfigurationSection categoriesSection = config.createSection("categories");
-        YamlConfiguration missionsMenuConfig = loadMissionsMenuFile(plugin);
-        MenuPatternSlots menuPatternSlots = FileUtils.loadGUI(MenuMissions.createEmptyInstance(), "missions.yml", missionsMenuConfig);
+
+        Pair<MenuPatternSlots, CommentedConfiguration> menuLoadResult = FileUtils.loadMenu(
+                new RegularMenuPattern.Builder<MenuMembers>(), "missions.yml", null);
+
+        if (menuLoadResult == null)
+            return;
+
+        MenuPatternSlots menuPatternSlots = menuLoadResult.getKey();
+        CommentedConfiguration missionsMenuConfig = menuLoadResult.getValue();
 
         int islandsCategorySlot = menuPatternSlots.getSlot(missionsMenuConfig.getString("island-missions", ""));
         if (islandsCategorySlot != -1) {
